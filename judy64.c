@@ -1,6 +1,6 @@
-//  Judy arrays  23 NOV 2012
+//  Judy arrays 9 NOV 2012
 
-//  Author Karl Malbrain, malbrain@yahoo.com
+//  Author Karl Malbrain, malbrain AT yahoo.com
 //  with assistance from Jan Weiss.
 
 //  Simplified judy arrays for strings and integers
@@ -32,9 +32,8 @@
 //  judy_prv:   retrieve the cell pointer for the prev string in the array.
 //  judy_del:   delete the key and cell for the current stack entry.
 
-#include <stdlib.h>
 #include <memory.h>
-#include <string.h>
+#include <stdlib.h>
 
 #ifdef linux
     #define _FILE_OFFSET_BITS 64
@@ -57,78 +56,7 @@
     #endif
 #endif
 
-#define PRIuint            "u"
-
-#if defined(__LP64__) || \
-    defined(__x86_64__) || \
-    defined(__amd64__) || \
-    defined(_WIN64) || \
-    defined(__sparc64__) || \
-    defined(__arch64__) || \
-    defined(__powerpc64__) || \
-    defined (__s390x__)
-    //    defines for 64 bit
-
-    typedef unsigned long long judyvalue;
-    typedef unsigned long long JudySlot;
-    #define JUDY_key_mask (0x07)
-    #define JUDY_key_size 8
-    #define JUDY_slot_size 8
-    #define JUDY_span_bytes (3 * JUDY_key_size)
-    #define JUDY_span_equiv JUDY_2
-    #define JUDY_radix_equiv JUDY_8
-
-    #define PRIjudyvalue    "llu"
-
-#else
-    //    defines for 32 bit
-
-    typedef unsigned int judyvalue;
-    typedef unsigned int JudySlot;
-    #define JUDY_key_mask (0x03)
-    #define JUDY_key_size 4
-    #define JUDY_slot_size 4
-    #define JUDY_span_bytes (7 * JUDY_key_size)
-    #define JUDY_span_equiv JUDY_4
-    #define JUDY_radix_equiv JUDY_8
-
-    #define PRIjudyvalue    "u"
-
-#endif
-
-#define JUDY_mask (~(JudySlot)0x07)
-
-//    define the alignment factor for judy nodes and allocations
-//    to enable this feature, set to 64
-
-#define JUDY_cache_line 8    // minimum size is 8 bytes
-
-#ifdef STANDALONE
-#include <assert.h>
-#include <stdio.h>
-
-unsigned int MaxMem = 0;
-
-// void judy_abort (char *msg) __attribute__ ((noreturn)); // Tell static analyser that this function will not return
-void judy_abort (char *msg)
-{
-    fprintf(stderr, "%s\n", msg);
-    exit(1);
-}
-#endif
-
-#define JUDY_seg    65536
-
-enum JUDY_types {
-    JUDY_radix        = 0,    // inner and outer radix fan-out
-    JUDY_1            = 1,    // linear list nodes of designated count
-    JUDY_2            = 2,
-    JUDY_4            = 3,
-    JUDY_8            = 4,
-    JUDY_16           = 5,
-    JUDY_32           = 6,
-    JUDY_span         = 7     // up to 28 tail bytes of key contiguously stored
-};
+#include "judy64.h"
 
 int JudySize[] = {
     (JUDY_slot_size * 16),                       // JUDY_radix node size
@@ -142,38 +70,29 @@ int JudySize[] = {
 };
 
 judyvalue JudyMask[9] = {
-0, 0xff, 0xffff, 0xffffff, 0xffffffff,
-#if JUDY_key_size > 4
-0xffffffffffULL, 0xffffffffffffULL, 0xffffffffffffffULL, 0xffffffffffffffffULL
-#endif
+    0, 0xff, 0xffff, 0xffffff, 0xffffffff,
+    #if JUDY_key_size > 4
+    0xffffffffffULL, 0xffffffffffffULL, 0xffffffffffffffULL, 0xffffffffffffffffULL
+    #endif
 };
 
-typedef struct {
-    void *seg;          // next used allocator
-    unsigned int next;  // next available offset
-} JudySeg;
+#ifdef STANDALONE
+#include <string.h>
+#include <stdio.h>
 
-typedef struct {
-    JudySlot next;      // judy object
-    unsigned int off;   // offset within key
-    int slot;           // slot within object
-} JudyStack;
+unsigned int MaxMem = 0;
 
-typedef struct {
-    JudySlot root[1];   // root of judy array
-    void **reuse[8];    // reuse judy blocks
-    JudySeg *seg;       // current judy allocator
-    unsigned int level; // current height of stack
-    unsigned int max;   // max height of stack
-    unsigned int depth; // number of Integers in a key, or zero for string keys
-    JudyStack stack[1]; // current cursor
-} Judy;
+// void judy_abort (char *msg) __attribute__ ((noreturn)); // Tell static analyser that this function will not return
+void judy_abort (char *msg)
+{
+    fprintf(stderr, "%s\n", msg);
+    exit(1);
+}
+#endif
 
-#define JUDY_max    JUDY_32
-
-// open judy object
-//    call with max key size
-//    and Integer tree depth.
+//    open judy object
+//        call with max key size
+//        and Integer tree depth.
 
 void *judy_open (unsigned int max, unsigned int depth)
 {
