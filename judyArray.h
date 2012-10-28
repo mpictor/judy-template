@@ -15,38 +15,28 @@
 #include "assert.h"
 #include <string.h>
 
+template< typename JudyValue >
 struct judyKVpair {
     unsigned char * key;
-    unsigned long long value;
+    JudyValue value;
 };
-
+template< typename JudyValue >
 class judyArray {
 protected:
     Judy * _judyarray;
     unsigned int _maxKeyLen;
-    JudySlot * _lastSlot;
+    JudyValue * _lastSlot;
     unsigned char *_buff;
+    bool _success;
 public:
-    judyArray( unsigned int maxKeyLen ): _maxKeyLen( maxKeyLen ) {
-        _judyarray = judy_open( _maxKeyLen ); //TODO if max key len is 8, treat as integer???
-        _buff = new char[_maxKeyLen];
-        assert( JUDY_cache_line >= 8 );
+    typedef judyKVpair< JudyValue > pair;
+    judyArray( unsigned int maxKeyLen ): _maxKeyLen( maxKeyLen ), _success( true ) {
+        _judyarray = judy_open( _maxKeyLen ); //TODO if max key len is 8, treat as long int???
+        _buff = new unsigned char[_maxKeyLen];
+        assert( sizeof( JudyValue ) == 8 && "JudyValue *must* be 64 bits" );
     }
 
-    ~judyArray() {
-        judy_close( _judyarray );
-        delete[] _buff;
-    }
-
-    unsigned long long getLastValue() {
-        return &_lastSlot;
-    }
-
-    void setLastValue( unsigned long long value ) {
-        &_lastSlot = value;
-    }
-
-    explicit judyArray( const judyArray & other ): _maxKeyLen( other._maxKeyLen ) {
+    explicit judyArray( const judyArray< JudyValue > & other ): _maxKeyLen( other._maxKeyLen ), _success( other._success ) {
         _judyarray = judy_clone( other._judyarray );
         _buff = new char[_maxKeyLen];
         strncpy( _buff, other._buff, _maxKeyLen );
@@ -54,64 +44,99 @@ public:
         find( _buff ); //set _lastSlot
     }
 
-// allocate data memory within judy array for external use.
-// void *judy_data (Judy *judy, unsigned int amt);
+    ~judyArray() {
+        judy_close( _judyarray );
+        delete[] _buff;
+    }
+
+    JudyValue getLastValue() {
+        return &_lastSlot;
+    }
+
+    void setLastValue( JudyValue value ) {
+        &_lastSlot = value;
+    }
+
+    bool success() {
+        return _success;
+    }
+    //TODO
+    // allocate data memory within judy array for external use.
+    // void *judy_data (Judy *judy, unsigned int amt);
 
     //can this overwrite?
-    insert( unsigned char * key, unsigned long long value, unsigned int keyLen = 0 ) {
+    void insert( const char * key, JudyValue value, unsigned int keyLen = 0 ) {
         assert( value != 0 );
         assert( keyLen <= _maxKeyLen );
         if( keyLen == 0 ) {
             keyLen = _maxKeyLen;
         }
-        _lastSlot = judy_cell( _judyarray, key, keyLen );
-        &_lastSlot = value;
+        _lastSlot = (JudyValue *) judy_cell( _judyarray, (const unsigned char *)key, keyLen );
+        if( _lastSlot ) {
+            *_lastSlot = value;
+            _success = true;
+        } else {
+            _success = false;
+        }
     }
 
     /// retrieve the cell pointer greater than or equal to given key
     /// NOTE what about an atOrBefore function?
-    const judyKVpair & atOrAfter( unsigned char * key, unsigned int keyLen = 0 ) {
+    const pair atOrAfter( const char * key, unsigned int keyLen = 0 ) {
         assert( keyLen <= _maxKeyLen );
         if( keyLen == 0 ) {
             keyLen = _maxKeyLen;
         }
-        _lastSlot = judy_strt( _judyarray, key, keyLen );
+        _lastSlot = (JudyValue *) judy_strt( _judyarray, (const unsigned char *)key, keyLen );
         return mostRecentPair();
     }
 
     /// retrieve the cell pointer, or return NULL for a given key.
-    unsigned long long find( unsigned char * key, unsigned int keyLen = 0 ) {
+    JudyValue find( const char * key, unsigned int keyLen = 0 ) {
         assert( keyLen <= _maxKeyLen );
         if( keyLen == 0 ) {
             keyLen = _maxKeyLen;
         }
-        _lastSlot = judy_slot( _judyarray, key, keyLen );
+        _lastSlot = (JudyValue *) judy_slot( _judyarray, (const unsigned char *)key, keyLen );
+        if( _lastSlot ) {
+            _success = true;
+            return *_lastSlot;
+        } else {
+            _success = false;
+            return 0;
+        }
     }
 
     /// retrieve the key-value pair for the most recent judy query.
-    inline const judyKVpair & mostRecentPair() {
-        judyKVpair kv;
+    inline const pair mostRecentPair() {
+        pair kv;
         judy_key( _judyarray, _buff, _maxKeyLen );
-        kv.value = &_lastSlot;
+        if( _lastSlot ) {
+            kv.value = *_lastSlot;
+            _success = true;
+        } else {
+            kv.value = (JudyValue) 0;
+            _success = false;
+        }
         kv.key = _buff;
-        return & kv;
+        return kv;
     }
 
     /// retrieve the last key-value pair in the array
-    const judyKVpair & end() {
-        _lastSlot = judy_end( _judyarray );
+    const pair & end() {
+        _lastSlot = (JudyValue *) judy_end( _judyarray );
         return mostRecentPair();
     }
 
     /// retrieve the key-value pair for the next string in the array.
-    const judyKVpair & next() {
-        _lastSlot = judy_nxt( _judyarray );
+    const pair & next() {
+        _lastSlot = (JudyValue *) judy_nxt( _judyarray );
         return mostRecentPair();
     }
 
     /// retrieve the key-value pair for the prev string in the array.
-    const judyKVpair & previous() {
-        _lastSlot = judy_prv( _judyarray );
+    const pair & previous() {
+        _lastSlot = (JudyValue *) judy_prv( _judyarray );
         return mostRecentPair();
     }
 
