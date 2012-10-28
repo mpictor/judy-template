@@ -131,13 +131,13 @@ extern "C" {
     void *judy_data (Judy *judy, unsigned int amt);
 
     /// insert a string into the judy array, return cell pointer.
-    JudySlot *judy_cell (Judy *judy, unsigned char *buff, unsigned int max);
+    JudySlot *judy_cell (Judy *judy, const unsigned char *buff, unsigned int max);
 
     /// retrieve the cell pointer greater than or equal to given key
-    JudySlot *judy_strt (Judy *judy, unsigned char *buff, unsigned int max);
+    JudySlot *judy_strt (Judy *judy, const unsigned char *buff, unsigned int max);
 
     /// retrieve the cell pointer, or return NULL for a given key.
-    JudySlot *judy_slot (Judy *judy, unsigned char *buff, unsigned int max);
+    JudySlot *judy_slot (Judy *judy, const unsigned char *buff, unsigned int max);
 
     /// retrieve the string value for the most recent judy query.
     unsigned int judy_key (Judy *judy, unsigned char *buff, unsigned int max);

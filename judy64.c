@@ -390,7 +390,7 @@ int keysize;
 
 //    find slot & setup cursor
 
-JudySlot *judy_slot (Judy *judy, unsigned char *buff, unsigned int max)
+JudySlot *judy_slot (Judy *judy, const unsigned char *buff, unsigned int max)
 {
 judyvalue *src = (judyvalue *)buff;
 int slot, size, keysize, tst, cnt;
@@ -1074,7 +1074,7 @@ unsigned char *base;
 
 //    return cell for first key greater than or equal to given key
 
-JudySlot *judy_strt (Judy *judy, unsigned char *buff, unsigned int max)
+JudySlot *judy_strt (Judy *judy, const unsigned char *buff, unsigned int max)
 {
 JudySlot *cell;
 
@@ -1125,7 +1125,7 @@ int i;
 
 //    judy_cell: add string to judy array
 
-JudySlot *judy_cell (Judy *judy, unsigned char *buff, unsigned int max)
+JudySlot *judy_cell (Judy *judy, const unsigned char *buff, unsigned int max)
 {
 judyvalue *src = (judyvalue *)buff;
 int size, idx, slot, cnt, tst;
