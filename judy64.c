@@ -57,8 +57,6 @@
     #endif
 #endif
 
-typedef unsigned char uchar;
-typedef unsigned int uint;
 #define PRIuint            "u"
 
 #if defined(__LP64__) || \
@@ -85,8 +83,8 @@ typedef unsigned int uint;
 #else
     //    defines for 32 bit
 
-    typedef uint judyvalue;
-    typedef uint JudySlot;
+    typedef unsigned int judyvalue;
+    typedef unsigned int JudySlot;
     #define JUDY_key_mask (0x03)
     #define JUDY_key_size 4
     #define JUDY_slot_size 4
@@ -109,7 +107,7 @@ typedef unsigned int uint;
 #include <assert.h>
 #include <stdio.h>
 
-uint MaxMem = 0;
+unsigned int MaxMem = 0;
 
 // void judy_abort (char *msg) __attribute__ ((noreturn)); // Tell static analyser that this function will not return
 void judy_abort (char *msg)
@@ -152,12 +150,12 @@ judyvalue JudyMask[9] = {
 
 typedef struct {
     void *seg;          // next used allocator
-    uint next;          // next available offset
+    unsigned int next;  // next available offset
 } JudySeg;
 
 typedef struct {
     JudySlot next;      // judy object
-    uint off;           // offset within key
+    unsigned int off;   // offset within key
     int slot;           // slot within object
 } JudyStack;
 
@@ -165,9 +163,9 @@ typedef struct {
     JudySlot root[1];   // root of judy array
     void **reuse[8];    // reuse judy blocks
     JudySeg *seg;       // current judy allocator
-    uint level;         // current height of stack
-    uint max;           // max height of stack
-    uint depth;         // number of Integers in a key, or zero for string keys
+    unsigned int level; // current height of stack
+    unsigned int max;   // max height of stack
+    unsigned int depth; // number of Integers in a key, or zero for string keys
     JudyStack stack[1]; // current cursor
 } Judy;
 
@@ -177,11 +175,11 @@ typedef struct {
 //    call with max key size
 //    and Integer tree depth.
 
-void *judy_open (uint max, uint depth)
+void *judy_open (unsigned int max, unsigned int depth)
 {
 JudySeg *seg;
 Judy *judy;
-uint amt;
+unsigned int amt;
 
     max++;        // allow for zero terminator on keys
 
@@ -208,7 +206,7 @@ uint amt;
     seg->next -= (JudySlot)seg & (JUDY_cache_line - 1);
     seg->next -= amt;
 
-    judy = (Judy *)((uchar *)seg + seg->next);
+    judy = (Judy *)((unsigned char *)seg + seg->next);
     memset(judy, 0, amt);
     judy->depth = depth;
      judy->seg = seg;
@@ -226,9 +224,9 @@ JudySeg *seg, *nxt = judy->seg;
 
 //    allocate judy node
 
-void *judy_alloc (Judy *judy, uint type)
+void *judy_alloc (Judy *judy, unsigned int type)
 {
-uint amt, idx, min;
+unsigned int amt, idx, min;
 JudySeg *seg;
 void **block;
 void **rtn;
@@ -298,10 +296,10 @@ void **rtn;
     //    generate additional free blocks
     //    to fill up to cache line size
 
-    rtn = (void **)((uchar *)judy->seg + judy->seg->next - amt);
+    rtn = (void **)((unsigned char *)judy->seg + judy->seg->next - amt);
 
     for( idx = type; amt & (JUDY_cache_line - 1); amt <<= 1 ) {
-        block = (void **)((uchar *)judy->seg + judy->seg->next - 2 * amt);
+        block = (void **)((unsigned char *)judy->seg + judy->seg->next - 2 * amt);
         judy->reuse[idx++] = block;
         *block = 0;
     }
@@ -311,7 +309,7 @@ void **rtn;
     return (void *)rtn;
 }
 
-void *judy_data (Judy *judy, uint amt)
+void *judy_data (Judy *judy, unsigned int amt)
 
 {
 JudySeg *seg;
@@ -348,7 +346,7 @@ void *block;
 
     judy->seg->next -= amt;
 
-    block = (void *)((uchar *)judy->seg + judy->seg->next);
+    block = (void *)((unsigned char *)judy->seg + judy->seg->next);
     memset (block, 0, amt);
     return block;
 }
@@ -356,7 +354,7 @@ void *block;
 void *judy_clone (Judy *judy)
 {
 Judy *clone;
-uint amt;
+unsigned int amt;
 
     amt = sizeof(Judy) + judy->max * sizeof(JudyStack);
     clone = judy_data (judy, amt);
@@ -380,13 +378,13 @@ void judy_free (Judy *judy, void *block, int type)
 
 //    assemble key from current path
 
-uint judy_key (Judy *judy, uchar *buff, uint max)
+unsigned int judy_key (Judy *judy, unsigned char *buff, unsigned int max)
 {
 judyvalue *dest = (judyvalue *)buff;
-uint len = 0, idx = 0, depth;
+unsigned int len = 0, idx = 0, depth;
 int slot, off, type;
 judyvalue value;
-uchar *base;
+unsigned char *base;
 int keysize;
 
     if( judy->depth )
@@ -411,7 +409,7 @@ int keysize;
         case JUDY_16:
         case JUDY_32:
             keysize = JUDY_key_size - (judy->stack[idx].off & JUDY_key_mask);
-            base = (uchar *)(judy->stack[idx].next & JUDY_mask);
+            base = (unsigned char *)(judy->stack[idx].next & JUDY_mask);
 
             if( judy->depth ) {
                 value = *(judyvalue *)(base + slot * keysize);
@@ -455,11 +453,11 @@ int keysize;
 
             if( !slot )
                 break;
-            buff[len++] = (uchar)slot;
+            buff[len++] = (unsigned char)slot;
             continue;
 
         case JUDY_span:
-            base = (uchar *)(judy->stack[idx].next & JUDY_mask);
+            base = (unsigned char *)(judy->stack[idx].next & JUDY_mask);
 
             for( slot = 0; slot < JUDY_span_bytes && base[slot]; slot++ )
               if( len < max )
@@ -473,7 +471,7 @@ int keysize;
 
 //    find slot & setup cursor
 
-JudySlot *judy_slot (Judy *judy, uchar *buff, uint max)
+JudySlot *judy_slot (Judy *judy, unsigned char *buff, unsigned int max)
 {
 judyvalue *src = (judyvalue *)buff;
 int slot, size, keysize, tst, cnt;
@@ -481,9 +479,9 @@ JudySlot next = *judy->root;
 judyvalue value, test = 0;
 JudySlot *table;
 JudySlot *node;
-uint depth = 0;
-uint off = 0;
-uchar *base;
+unsigned int depth = 0;
+unsigned int off = 0;
+unsigned char *base;
 
     judy->level = 0;
 
@@ -503,7 +501,7 @@ uchar *base;
         case JUDY_8:
         case JUDY_16:
         case JUDY_32:
-            base = (uchar *)(next & JUDY_mask);
+            base = (unsigned char *)(next & JUDY_mask);
             node = (JudySlot *)((next & JUDY_mask) + size);
             keysize = JUDY_key_size - (off & JUDY_key_mask);
             cnt = size / (sizeof(JudySlot) + keysize);
@@ -584,7 +582,7 @@ uchar *base;
 
         case JUDY_span:
             node = (JudySlot *)((next & JUDY_mask) + JudySize[JUDY_span]);
-            base = (uchar *)(next & JUDY_mask);
+            base = (unsigned char *)(next & JUDY_mask);
             cnt = tst = JUDY_span_bytes;
             if( tst > (int)(max - off) )
                 tst = max - off;
@@ -608,15 +606,15 @@ uchar *base;
 
 JudySlot *judy_promote (Judy *judy, JudySlot *next, int idx, judyvalue value, int keysize)
 {
-uchar *base = (uchar *)(*next & JUDY_mask);
+unsigned char *base = (unsigned char *)(*next & JUDY_mask);
 int oldcnt, newcnt, slot;
 #if BYTE_ORDER == BIG_ENDIAN
     int i;
 #endif
 JudySlot *newnode, *node;
 JudySlot *result;
-uchar *newbase;
-uint type;
+unsigned char *newbase;
+unsigned int type;
 
     type = (*next & 0x07) + 1;
     node = (JudySlot *)((*next & JUDY_mask) + JudySize[type-1]);
@@ -665,13 +663,13 @@ uint type;
 //    make node with slot - start entries
 //    moving key over one offset
 
-void judy_radix (Judy *judy, JudySlot *radix, uchar *old, int start, int slot, int keysize, uchar key, uint depth)
+void judy_radix (Judy *judy, JudySlot *radix, unsigned char *old, int start, int slot, int keysize, unsigned char key, unsigned int depth)
 {
 int size, idx, cnt = slot - start, newcnt;
 JudySlot *node, *oldnode;
-uint type = JUDY_1 - 1;
+unsigned int type = JUDY_1 - 1;
 JudySlot *table;
-uchar *base;
+unsigned char *base;
 
     //    if necessary, setup inner radix node
 
@@ -718,14 +716,14 @@ uchar *base;
 
 //    decompose full node to radix nodes
 
-void judy_splitnode (Judy *judy, JudySlot *next, uint size, uint keysize, uint depth)
+void judy_splitnode (Judy *judy, JudySlot *next, unsigned int size, unsigned int keysize, unsigned int depth)
 {
 int cnt, slot, start = 0;
-uint key = 0x0100, nxt;
+unsigned int key = 0x0100, nxt;
 JudySlot *newradix;
-uchar *base;
+unsigned char *base;
 
-    base = (uchar  *)(*next & JUDY_mask);
+    base = (unsigned char  *)(*next & JUDY_mask);
     cnt = size / (sizeof(JudySlot) + keysize);
 
     //    allocate outer judy_radix node
@@ -747,24 +745,24 @@ uchar *base;
 
         //    decompose portion of old node into radix nodes
 
-        judy_radix (judy, newradix, base, start, slot, keysize - 1, (uchar)key, depth);
+        judy_radix (judy, newradix, base, start, slot, keysize - 1, (unsigned char)key, depth);
         start = slot;
         key = nxt;
     }
 
-    judy_radix (judy, newradix, base, start, slot, keysize - 1, (uchar)key, depth);
+    judy_radix (judy, newradix, base, start, slot, keysize - 1, (unsigned char)key, depth);
     judy_free (judy, (void **)base, JUDY_max);
 }
 
 //    return first leaf
 
-JudySlot *judy_first (Judy *judy, JudySlot next, uint off, uint depth)
+JudySlot *judy_first (Judy *judy, JudySlot next, unsigned int off, unsigned int depth)
 {
 JudySlot *table, *inner;
-uint keysize, size;
+unsigned int keysize, size;
 JudySlot *node;
 int slot, cnt;
-uchar *base;
+unsigned char *base;
 
     while( next ) {
         if( judy->level < judy->max )
@@ -783,7 +781,7 @@ uchar *base;
         case JUDY_32:
             keysize = JUDY_key_size - (off & JUDY_key_mask);
             node = (JudySlot *)((next & JUDY_mask) + size);
-            base = (uchar *)(next & JUDY_mask);
+            base = (unsigned char *)(next & JUDY_mask);
             cnt = size / (sizeof(JudySlot) + keysize);
 
             for( slot = 0; slot < cnt; slot++ )
@@ -823,7 +821,7 @@ uchar *base;
             continue;
         case JUDY_span:
             node = (JudySlot *)((next & JUDY_mask) + JudySize[JUDY_span]);
-            base = (uchar *)(next & JUDY_mask);
+            base = (unsigned char *)(next & JUDY_mask);
             cnt = JUDY_span_bytes;
             if( !base[cnt - 1] )    // leaf node?
                 return &node[-1];
@@ -837,13 +835,13 @@ uchar *base;
 
 //    return last leaf cell pointer
 
-JudySlot *judy_last (Judy *judy, JudySlot next, uint off, uint depth)
+JudySlot *judy_last (Judy *judy, JudySlot next, unsigned int off, unsigned int depth)
 {
 JudySlot *table, *inner;
-uint keysize, size;
+unsigned int keysize, size;
 JudySlot *node;
 int slot, cnt;
-uchar *base;
+unsigned char *base;
 
     while( next ) {
         if( judy->level < judy->max )
@@ -861,7 +859,7 @@ uchar *base;
         case JUDY_32:
             keysize = JUDY_key_size - (off & JUDY_key_mask);
             slot = size / (sizeof(JudySlot) + keysize);
-            base = (uchar *)(next & JUDY_mask);
+            base = (unsigned char *)(next & JUDY_mask);
             node = (JudySlot *)((next & JUDY_mask) + size);
             judy->stack[judy->level].slot = --slot;
 
@@ -899,7 +897,7 @@ uchar *base;
 
         case JUDY_span:
             node = (JudySlot *)((next & JUDY_mask) + JudySize[JUDY_span]);
-            base = (uchar *)(next & JUDY_mask);
+            base = (unsigned char *)(next & JUDY_mask);
             cnt = JUDY_span_bytes;
             if( !base[cnt - 1] )    // leaf node?
                 return &node[-1];
@@ -925,10 +923,10 @@ JudySlot *table, *inner;
 int slot, size, cnt;
 JudySlot *node;
 JudySlot next;
-uint keysize;
-uchar *base;
-uint depth;
-uint off;
+unsigned int keysize;
+unsigned char *base;
+unsigned int depth;
+unsigned int off;
 
     if( !judy->level )
         return judy_first (judy, *judy->root, 0, 0);
@@ -950,7 +948,7 @@ uint off;
         case JUDY_32:
             cnt = size / (sizeof(JudySlot) + keysize);
             node = (JudySlot *)((next & JUDY_mask) + size);
-            base = (uchar *)(next & JUDY_mask);
+            base = (unsigned char *)(next & JUDY_mask);
             if( ++slot < cnt )
 #if BYTE_ORDER != BIG_ENDIAN
                 if( !judy->depth && !base[slot * keysize] || judy->depth && ++depth == judy->depth )
@@ -1002,9 +1000,9 @@ JudySlot *judy_prv (Judy *judy)
 int slot, size, keysize;
 JudySlot *table, *inner;
 JudySlot *node, next;
-uchar *base;
-uint depth;
-uint off;
+unsigned char *base;
+unsigned int depth;
+unsigned int off;
 
     if( !judy->level )
         return judy_last (judy, *judy->root, 0, 0);
@@ -1029,7 +1027,7 @@ uint off;
                 continue;
             }
 
-            base = (uchar *)(next & JUDY_mask);
+            base = (unsigned char *)(next & JUDY_mask);
             judy->stack[judy->level].slot--;
             keysize = JUDY_key_size - (off & JUDY_key_mask);
 
@@ -1078,7 +1076,7 @@ int slot, off, size, type, high;
 JudySlot *table, *inner;
 JudySlot next, *node;
 int keysize, cnt;
-uchar *base;
+unsigned char *base;
 
     while( judy->level ) {
         next = judy->stack[judy->level].next;
@@ -1096,7 +1094,7 @@ uchar *base;
             keysize = JUDY_key_size - (off & JUDY_key_mask);
             cnt = size / (sizeof(JudySlot) + keysize);
             node = (JudySlot *)((next & JUDY_mask) + size);
-            base = (uchar *)(next & JUDY_mask);
+            base = (unsigned char *)(next & JUDY_mask);
 
             //    move deleted slot to first slot
 
@@ -1142,7 +1140,7 @@ uchar *base;
             continue;
 
         case JUDY_span:
-            base = (uchar *)(next & JUDY_mask);
+            base = (unsigned char *)(next & JUDY_mask);
             judy_free (judy, base, type);
             judy->level--;
             continue;
@@ -1157,7 +1155,7 @@ uchar *base;
 
 //    return cell for first key greater than or equal to given key
 
-JudySlot *judy_strt (Judy *judy, uchar *buff, uint max)
+JudySlot *judy_strt (Judy *judy, unsigned char *buff, unsigned int max)
 {
 JudySlot *cell;
 
@@ -1174,12 +1172,12 @@ JudySlot *cell;
 
 //    split open span node
 
-void judy_splitspan (Judy *judy, JudySlot *next, uchar *base)
+void judy_splitspan (Judy *judy, JudySlot *next, unsigned char *base)
 {
 JudySlot *node = (JudySlot *)(base + JudySize[JUDY_span]);
-uint cnt = JUDY_span_bytes;
-uchar *newbase;
-uint off = 0;
+unsigned int cnt = JUDY_span_bytes;
+unsigned char *newbase;
+unsigned int off = 0;
 #if BYTE_ORDER != BIG_ENDIAN
 int i;
 #endif
@@ -1208,18 +1206,18 @@ int i;
 
 //    judy_cell: add string to judy array
 
-JudySlot *judy_cell (Judy *judy, uchar *buff, uint max)
+JudySlot *judy_cell (Judy *judy, unsigned char *buff, unsigned int max)
 {
 judyvalue *src = (judyvalue *)buff;
 int size, idx, slot, cnt, tst;
 JudySlot *next = judy->root;
 judyvalue test, value;
-uint off = 0, start;
+unsigned int off = 0, start;
 JudySlot *table;
 JudySlot *node;
-uint depth = 0;
-uint keysize;
-uchar *base;
+unsigned int depth = 0;
+unsigned int keysize;
+unsigned char *base;
 
     judy->level = 0;
 
@@ -1240,7 +1238,7 @@ uchar *base;
         case JUDY_32:
             keysize = JUDY_key_size - (off & JUDY_key_mask);
             cnt = size / (sizeof(JudySlot) + keysize);
-            base = (uchar *)(*next & JUDY_mask);
+            base = (unsigned char *)(*next & JUDY_mask);
             node = (JudySlot *)((*next & JUDY_mask) + size);
             start = off;
             slot = cnt;
@@ -1357,7 +1355,7 @@ uchar *base;
             continue;
 
         case JUDY_span:
-            base = (uchar *)(*next & JUDY_mask);
+            base = (unsigned char *)(*next & JUDY_mask);
             node = (JudySlot *)((*next & JUDY_mask) + JudySize[JUDY_span]);
             cnt = JUDY_span_bytes;
             tst = cnt;
@@ -1505,15 +1503,15 @@ uchar *base;
 
 //    define pennysort parameters
 
-uint PennyRecs = (4096 * 400);    // records to sort to temp files
-uint PennyLine = 100;            // length of input record
-uint PennyKey = 10;                // length of input key
-uint PennyOff = 0;                // key offset in input record
+unsigned int PennyRecs = (4096 * 400);    // records to sort to temp files
+unsigned int PennyLine = 100;            // length of input record
+unsigned int PennyKey = 10;                // length of input key
+unsigned int PennyOff = 0;                // key offset in input record
 
 unsigned long long PennyMerge;    // PennyRecs * PennyLine = file map length
-uint PennyPasses;                // number of intermediate files created
-uint PennySortTime;                // cpu time to run sort
-uint PennyMergeTime;            // cpu time to run merge
+unsigned int PennyPasses;                // number of intermediate files created
+unsigned int PennySortTime;                // cpu time to run sort
+unsigned int PennyMergeTime;            // cpu time to run merge
 
 typedef struct {
     void *buff;        // record pointer in input file map
@@ -1527,7 +1525,7 @@ int ifd = fileno (infile);
 char filename[512];
 PennySort *line;
 JudySlot *cell;
-uchar *inbuff;
+unsigned char *inbuff;
 void *judy;
 FILE *out;
 #if defined(_WIN32)
@@ -1635,13 +1633,13 @@ int merge (FILE *out, char *outname)
 time_t start = time(NULL);
 char filename[512];
 JudySlot *cell;
-uint nxt, idx;
-uchar **line;
-uint *next;
+unsigned int nxt, idx;
+unsigned char **line;
+unsigned int *next;
 void *judy;
 FILE **in;
 
-    next = calloc (PennyPasses + 1, sizeof(uint));
+    next = calloc (PennyPasses + 1, sizeof(unsigned int));
     line = calloc (PennyPasses, sizeof(void *));
     in = calloc (PennyPasses, sizeof(void *));
 
@@ -1656,14 +1654,14 @@ FILE **in;
         setvbuf (in[idx], NULL, _IOFBF, 4096 * 1024);
         fread (line[idx], PennyLine, 1, in[idx]);
         cell = judy_cell (judy, line[idx] + PennyOff, PennyKey);
-        next[idx + 1] = *(uint *)cell;
+        next[idx + 1] = *(unsigned int *)cell;
         *cell = idx + 1;
     }
 
     //    output records, replacing smallest each time
 
     while( cell = judy_strt (judy, NULL, 0) ) {
-        nxt = *(uint *)cell;
+        nxt = *(unsigned int *)cell;
         judy_del (judy);
 
         // process duplicates
@@ -1674,7 +1672,7 @@ FILE **in;
 
             if( fread (line[idx], PennyLine, 1, in[idx]) ) {
                 cell = judy_cell (judy, line[idx] + PennyOff, PennyKey);
-                next[idx + 1] = *(uint *)cell;
+                next[idx + 1] = *(unsigned int *)cell;
                 *cell = idx + 1;
             } else
                 next[idx + 1] = 0;
@@ -1721,13 +1719,13 @@ FILE **in;
 
 int main (int argc, char **argv)
 {
-uchar buff[1024];
+unsigned char buff[1024];
 JudySlot max = 0;
 JudySlot *cell;
 FILE *in, *out;
 void *judy;
-uint len;
-uint idx;
+unsigned int len;
+unsigned int idx;
 
     if( argc > 1 )
         in = fopen (argv[1], "rb");
