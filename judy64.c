@@ -94,7 +94,7 @@ void judy_abort (char *msg)
 //        call with max key size
 //        and Integer tree depth.
 
-void *judy_open (unsigned int max, unsigned int depth)
+Judy *judy_open (unsigned int max, unsigned int depth)
 {
 JudySeg *seg;
 Judy *judy;
@@ -270,7 +270,7 @@ void *block;
     return block;
 }
 
-void *judy_clone (Judy *judy)
+Judy *judy_clone (Judy *judy)
 {
 Judy *clone;
 unsigned int amt;

@@ -119,13 +119,13 @@ extern "C" {
 #endif
 
     /// open a new judy array returning a judy object.
-    void *judy_open (unsigned int max, unsigned int depth);
+    Judy *judy_open (unsigned int max, unsigned int depth);
 
     /// close an open judy array, freeing all memory.
     void judy_close (Judy *judy);
 
     /// clone an open judy array, duplicating the stack.
-    void *judy_clone (Judy *judy);
+    Judy *judy_clone (Judy *judy);
 
     /// allocate data memory within judy array for external use.
     void *judy_data (Judy *judy, unsigned int amt);
