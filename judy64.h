@@ -1,17 +1,17 @@
 #ifndef JUDY64_H
 #define JUDY64_H
-//  Judy arrays 9 NOV 2012
+//  Judy arrays 9 NOV 2012 (judy64l.c from http://code.google.com/p/judyarray/ )
+//  This code is public domain.
 
 //  Author Karl Malbrain, malbrain AT yahoo.com
 //  with assistance from Jan Weiss.
+//  modifications (and any bugs) by Mark Pictor, mpictor at gmail
 
 //  Simplified judy arrays for strings and integers
 //  Adapted from the ideas of Douglas Baskins of HP.
 
 //  Map a set of keys to corresponding memory cells (uints).
 //  Each cell must be set to a non-zero value by the caller.
-
-//  STANDALONE is defined to compile into a string sorter.
 
 //  String mappings are denoted by calling judy_open with zero as
 //  the second argument.  Integer mappings are denoted by calling
@@ -86,9 +86,9 @@ enum JUDY_types {
     JUDY_2            = 2,
     JUDY_4            = 3,
     JUDY_8            = 4,
-    JUDY_16            = 5,
-    JUDY_32            = 6,
-    JUDY_span        = 7      // up to 28 tail bytes of key contiguously stored
+    JUDY_16           = 5,
+    JUDY_32           = 6,
+    JUDY_span         = 7      // up to 28 tail bytes of key contiguously stored
 };
 
 typedef struct {

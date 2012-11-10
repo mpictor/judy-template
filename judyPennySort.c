@@ -1,7 +1,9 @@
-//  Judy arrays 9 NOV 2012
+//  Judy arrays 9 NOV 2012 (judy64l.c from http://code.google.com/p/judyarray/ )
+//  This code is public domain.
 
 //  Author Karl Malbrain, malbrain AT yahoo.com
 //  with assistance from Jan Weiss.
+//  modifications (and any bugs) by Mark Pictor, mpictor at gmail
 
 //  Simplified judy arrays for strings and integers
 //  Adapted from the ideas of Douglas Baskins of HP.
