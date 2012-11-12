@@ -68,8 +68,9 @@ public:
     void insert( const char * key, JudyValue value, unsigned int keyLen = 0 ) {
         assert( value != 0 );
         assert( keyLen <= _maxKeyLen );
+        assert( keyLen == strlen( key ) );
         if( keyLen == 0 ) {
-            keyLen = _maxKeyLen;
+            keyLen = strlen( key );
         }
         _lastSlot = (JudyValue *) judy_cell( _judyarray, (const unsigned char *)key, keyLen );
         if( _lastSlot ) {
@@ -84,8 +85,9 @@ public:
     /// NOTE what about an atOrBefore function?
     const pair atOrAfter( const char * key, unsigned int keyLen = 0 ) {
         assert( keyLen <= _maxKeyLen );
+        assert( keyLen == strlen( key ) );
         if( keyLen == 0 ) {
-            keyLen = _maxKeyLen;
+            keyLen = strlen( key );
         }
         _lastSlot = (JudyValue *) judy_strt( _judyarray, (const unsigned char *)key, keyLen );
         return mostRecentPair();
@@ -94,8 +96,9 @@ public:
     /// retrieve the cell pointer, or return NULL for a given key.
     JudyValue find( const char * key, unsigned int keyLen = 0 ) {
         assert( keyLen <= _maxKeyLen );
+        assert( keyLen == strlen( key ) );
         if( keyLen == 0 ) {
-            keyLen = _maxKeyLen;
+            keyLen = strlen( key );
         }
         _lastSlot = (JudyValue *) judy_slot( _judyarray, (const unsigned char *)key, keyLen );
         if( _lastSlot ) {
