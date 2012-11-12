@@ -1,27 +1,27 @@
-#ifndef JUDYARRAY_CPP_H
-#define JUDYARRAY_CPP_H
+#ifndef JUDYSARRAY_CPP_H
+#define JUDYSARRAY_CPP_H
 
 /****************************************************************************//**
-* \file judyArray.h C++ wrapper for judy array implementation
+* \file judySArray.h C++ wrapper for judy array implementation
 *
 *    A judy array maps a set of strings to corresponding memory cells.
 *    Each cell must be set to a non-zero value by the caller.
 *
-*    (C)opyright 2012, Mark Pictor. License: 3-clause BSD
+*    Author: Mark Pictor. Public domain.
 *
 ********************************************************************************/
 
-#include "judy64k.h"
+#include "judy64.h"
 #include "assert.h"
 #include <string.h>
 
 template< typename JudyValue >
-struct judyKVpair {
+struct judysKVpair {
     unsigned char * key;
     JudyValue value;
 };
 template< typename JudyValue >
-class judyArray {
+class judySArray {
 protected:
     Judy * _judyarray;
     unsigned int _maxKeyLen;
@@ -29,14 +29,14 @@ protected:
     unsigned char *_buff;
     bool _success;
 public:
-    typedef judyKVpair< JudyValue > pair;
-    judyArray( unsigned int maxKeyLen ): _maxKeyLen( maxKeyLen ), _success( true ) {
-        _judyarray = judy_open( _maxKeyLen ); //TODO if max key len is 8, treat as long int???
+    typedef judysKVpair< JudyValue > pair;
+    judySArray( unsigned int maxKeyLen ): _maxKeyLen( maxKeyLen ), _success( true ) {
+        _judyarray = judy_open( _maxKeyLen, 0 );
         _buff = new unsigned char[_maxKeyLen];
-        assert( sizeof( JudyValue ) == 8 && "JudyValue *must* be 64 bits" );
+        assert( sizeof( JudyValue ) == sizeof( this ) && "JudyValue *must* be the same size as a pointer!" );
     }
 
-    explicit judyArray( const judyArray< JudyValue > & other ): _maxKeyLen( other._maxKeyLen ), _success( other._success ) {
+    explicit judySArray( const judySArray< JudyValue > & other ): _maxKeyLen( other._maxKeyLen ), _success( other._success ) {
         _judyarray = judy_clone( other._judyarray );
         _buff = new char[_maxKeyLen];
         strncpy( _buff, other._buff, _maxKeyLen );
@@ -44,7 +44,7 @@ public:
         find( _buff ); //set _lastSlot
     }
 
-    ~judyArray() {
+    ~judySArray() {
         judy_close( _judyarray );
         delete[] _buff;
     }
@@ -145,4 +145,4 @@ public:
         judy_del ( _judyarray );
     }
 };
-#endif //JUDYARRAY_CPP_H
+#endif //JUDYSARRAY_CPP_H
