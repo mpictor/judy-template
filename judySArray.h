@@ -143,9 +143,21 @@ public:
         return mostRecentPair();
     }
 
-    /// delete the key and cell for the current stack entry.
-    void removeEntry() {
-        judy_del ( _judyarray );
+    /** delete a key-value pair. If the array is not empty,
+     * getLastValue() will return the entry before the one that was deleted
+     * \sa isEmpty()
+     */
+    bool removeEntry( const char * key ) {
+        if( judy_slot( _judyarray, (const unsigned char *)key, strlen( key ) ) ) {
+            _lastSlot = (JudyValue *) judy_del( _judyarray );
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    bool isEmpty() {
+        return ( _judyarray ? true : false );
     }
 };
 #endif //JUDYSARRAY_CPP_H
