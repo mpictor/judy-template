@@ -10,5 +10,17 @@ int main() {
     jl.insert(7, 312);
     jl.insert(8, 412);
     judyLArray< uint64_t, uint64_t >::pair kv = jl.atOrAfter(4);
-    std::cout << "p1 " << kv.key << " p2 " << kv.value << std::endl;
+    std::cout << "k " << kv.key << " v " << kv.value << std::endl;
+
+    long v = jl.find( 9 );
+    if( v != 0 || jl.success() ) {
+        std::cout << "find fails - v: " << v << " success: " << jl.success() << std::endl;
+    }
+    v = jl.find( 7 );
+    if( v != 312 || !jl.success() ) {
+        std::cout << "find fails - v: " << v << " success: " << jl.success() << std::endl;
+    }
+
+
+    //TODO test all of judyLArray
 }

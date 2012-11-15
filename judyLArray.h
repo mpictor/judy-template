@@ -20,6 +20,11 @@ struct judylKVpair {
     JudyKey key;
     JudyValue value;
 };
+
+/** The following template parameters must be the same size as a void*
+ *  \param JudyKey the type of the key, i.e. uint64_t, pointer-to-object, etc
+ *  \param JudyValue the type of the value
+ */
 template< typename JudyKey, typename JudyValue >
 class judyLArray {
 protected:
@@ -36,7 +41,8 @@ public:
         assert( sizeof( JudyValue ) == sizeof( this ) && "JudyValue *must* be the same size as a pointer!" );
     }
 
-    explicit judyLArray( const judyLArray< JudyKey, JudyValue > & other ): _maxKeyLen( other._maxKeyLen ), _depth( other._depth ), _success( other._success ) {
+    explicit judyLArray( const judyLArray< JudyKey, JudyValue > & other ): _maxKeyLen( other._maxKeyLen ),
+                            _depth( other._depth ), _success( other._success ) {
         _judyarray = judy_clone( other._judyarray );
         _buff = new unsigned char[_maxKeyLen];
         strncpy( _buff, other._buff, _maxKeyLen );
@@ -67,7 +73,7 @@ public:
     //can this overwrite?
     void insert( JudyKey key, JudyValue value ) {
         assert( value != 0 );
-        _lastSlot = (JudyValue *) judy_cell( _judyarray, (const unsigned char *) &key, _maxKeyLen );
+        _lastSlot = (JudyValue *) judy_cell( _judyarray, (const unsigned char *) &key, 0 );
         if( _lastSlot ) {
             *_lastSlot = value;
             _success = true;
@@ -79,13 +85,13 @@ public:
     /// retrieve the cell pointer greater than or equal to given key
     /// NOTE what about an atOrBefore function?
     const pair atOrAfter( JudyKey key ) {
-        _lastSlot = (JudyValue *) judy_strt( _judyarray, (const unsigned char *) &key, _maxKeyLen );
+        _lastSlot = (JudyValue *) judy_strt( _judyarray, (const unsigned char *) &key, 0 );
         return mostRecentPair();
     }
 
     /// retrieve the cell pointer, or return NULL for a given key.
     JudyValue find( JudyKey key ) {
-        _lastSlot = (JudyValue *) judy_slot( _judyarray, (const unsigned char *) &key, _maxKeyLen );
+        _lastSlot = (JudyValue *) judy_slot( _judyarray, (const unsigned char *) &key, 0 );
         if( _lastSlot ) {
             _success = true;
             return *_lastSlot;
@@ -98,7 +104,7 @@ public:
     /// retrieve the key-value pair for the most recent judy query.
     inline const pair mostRecentPair() {
         pair kv;
-        judy_key( _judyarray, _buff, _maxKeyLen );
+        judy_key( _judyarray, _buff, 0 );
         if( _lastSlot ) {
             kv.value = *_lastSlot;
             _success = true;
