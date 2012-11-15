@@ -308,6 +308,41 @@ unsigned int idx;
         return merge (out, argv[2]);
     }
 
+#ifdef HEXKEYS
+    judy = judy_open (1024, 4);
+
+    while( fgets((char *)buff, sizeof(buff), in) ) {
+    uint key[4];
+        if( len = strlen((const char *)buff) )
+            buff[--len] = 0;                // remove LF
+        key[3] = strtoul (buff + 24, NULL, 16);
+        buff[24] = 0;
+        key[2] = strtoul (buff + 16, NULL, 16);
+        buff[16] = 0;
+        key[1] = strtoul (buff + 8, NULL, 16);
+        buff[8] = 0;
+        key[0] = strtoul (buff, NULL, 16);
+        *(judy_cell (judy, (void *)key, 0)) += 1;        // count instances of string
+        max++;
+    }
+
+    fprintf(stderr, "%" PRIuint " memory used\n", MaxMem);
+
+    cell = judy_strt (judy, NULL, 0);
+
+    if( cell ) do {
+    uint key[4];
+        len = judy_key(judy, (void *)key, 0);
+        for( idx = 0; idx < *cell; idx++ ){        // spit out duplicates
+            fprintf (out, "%.8X", key[0]);
+            fprintf (out, "%.8X", key[1]);
+            fprintf (out, "%.8X", key[2]);
+            fprintf (out, "%.8X", key[3]);
+            fputc('\n', out);
+        }
+    } while( cell = judy_nxt (judy) );
+
+#else
     judy = judy_open (1024, 0);
 
     while( fgets((char *)buff, sizeof(buff), in) ) {
@@ -324,10 +359,11 @@ unsigned int idx;
     if( cell ) do {
         len = judy_key(judy, buff, sizeof(buff));
         for( idx = 0; idx < *cell; idx++ ){        // spit out duplicates
-            fwrite(buff, len, 1, out), fputc('\n', out);
+            fwrite(buff, len, 1, out);
+            fputc('\n', out);
         }
     } while( cell = judy_nxt (judy) );
-
+#endif
 #if 0
     // test deletion all the way to an empty tree
 
