@@ -389,7 +389,10 @@ judyvalue value;
 uchar *base;
 int keysize;
 
-	max--;		// leave room for zero terminator
+	if( judy->depth )
+		max = judy->depth * JUDY_key_size;
+	else
+		max--;		// leave room for zero terminator
 
 	while( len < max && ++idx <= judy->level ) {
 		type = judy->stack[idx].next & 0x07;
@@ -1395,7 +1398,6 @@ uchar *base;
 
 		if( judy->depth ) {
 			value = src[depth];
-			value &= JudyMask[keysize];
 #if BYTE_ORDER != BIG_ENDIAN
 			  memcpy(base, &value, keysize);	// copy new key into slot
 #else
@@ -1405,14 +1407,14 @@ uchar *base;
 		} else {
 #if BYTE_ORDER != BIG_ENDIAN
 		  while( keysize )
-			if( judy->depth || off + keysize <= max )
+			if( off + keysize <= max )
 				*base++ = buff[off + --keysize];
 			else
 				base++, --keysize;
 #else
 		  tst = keysize;
 
-		  if( !judy->depth && tst > (int)(max - off) )
+		  if( tst > (int)(max - off) )
 			tst = max - off;
 
 		  memcpy (base, buff + off, tst);
@@ -1461,7 +1463,6 @@ uchar *base;
 	else
 	  while( depth < judy->depth ) {
 		base = judy_alloc (judy, JUDY_1);
-		keysize = JUDY_key_size - (off & JUDY_key_mask);
 		node = (JudySlot  *)(base + JudySize[JUDY_1]);
 		*next = (JudySlot)base | JUDY_1;
 
