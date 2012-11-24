@@ -35,7 +35,7 @@ protected:
     bool _success;
 public:
     typedef judylKVpair< JudyKey, JudyValue > pair;
-    judyLArray(): _maxKeyLen( sizeof( JudyKey ) ), _depth( sizeof( JudyKey ) ), _success( true ) {
+    judyLArray(): _maxKeyLen( 2 ^ ( sizeof( JudyKey ) ) ), _depth( sizeof( JudyKey ) ), _success( true ) {
         _judyarray = judy_open( _maxKeyLen, _depth );
         _buff = new unsigned char[_maxKeyLen];
         assert( sizeof( JudyValue ) == sizeof( this ) && "JudyValue *must* be the same size as a pointer!" );
