@@ -132,7 +132,7 @@ time_t start = time(NULL);
     fclose (out);
     PennyPasses++;
   }
-  fprintf (stderr, "End Sort %d secs", time(NULL) - start);
+  fprintf (stderr, "End Sort %llu secs", (unsigned long long) time(NULL) - start);
 #if defined(_WIN32)
   CloseHandle (fm);
   GetProcessTimes (GetCurrentProcess(), dummy, dummy, dummy, user);
@@ -204,7 +204,7 @@ FILE **in;
     free (next);
     free (in);
 
-    fprintf (stderr, "End Merge %d secs", time(NULL) - start);
+    fprintf (stderr, "End Merge %llu secs", (unsigned long long) time(NULL) - start);
 #ifdef _WIN32
     {
     FILETIME dummy[1];
