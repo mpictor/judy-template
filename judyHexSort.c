@@ -1,4 +1,4 @@
-//  Judy arrays 9 NOV 2012 (judy64l.c from http://code.google.com/p/judyarray/ )
+//  Judy arrays 13 DEC 2012 (judy64n.c from http://code.google.com/p/judyarray/ )
 //  This code is public domain.
 
 //  Author Karl Malbrain, malbrain AT yahoo.com
