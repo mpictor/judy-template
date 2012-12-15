@@ -34,16 +34,15 @@
 
 
 
-#if defined(__LP64__) || \
-    defined(__x86_64__) || \
-    defined(__amd64__) || \
-    defined(_WIN64) || \
-    defined(__sparc64__) || \
-    defined(__arch64__) || \
+#if defined(__LP64__)      || \
+    defined(__x86_64__)    || \
+    defined(__amd64__)     || \
+    defined(_WIN64)        || \
+    defined(__sparc64__)   || \
+    defined(__arch64__)    || \
     defined(__powerpc64__) || \
     defined (__s390x__)
     //    defines for 64 bit
-
     typedef unsigned long long judyvalue;
     typedef unsigned long long JudySlot;
     #define JUDY_key_mask (0x07)
@@ -57,7 +56,6 @@
 
 #else
     //    defines for 32 bit
-
     typedef unsigned int judyvalue;
     typedef unsigned int JudySlot;
     #define JUDY_key_mask (0x03)
@@ -96,7 +94,7 @@ enum JUDY_types {
 };
 
 typedef struct {
-    void *seg;                // next used allocator
+    void * seg;               // next used allocator
     unsigned int next;        // next available offset
 } JudySeg;
 
@@ -108,8 +106,8 @@ typedef struct {
 
 typedef struct {
     JudySlot root[1];         // root of judy array
-    void **reuse[8];          // reuse judy blocks
-    JudySeg *seg;             // current judy allocator
+    void ** reuse[8];         // reuse judy blocks
+    JudySeg * seg;            // current judy allocator
     unsigned int level;       // current height of stack
     unsigned int max;         // max height of stack
     unsigned int depth;       // number of Integers in a key, or zero for string keys
@@ -117,17 +115,16 @@ typedef struct {
 } Judy;
 
 #ifdef ASKITIS
-int Words = 0;
-int Inserts = 0;
-int Found = 0;
-
-#if JUDY_key_size < 8
-#define JUDY_max    JUDY_16
+   int Words = 0;
+   int Inserts = 0;
+   int Found = 0;
+#  if JUDY_key_size < 8
+#    define JUDY_max    JUDY_16
+#  else
+#    define JUDY_max    JUDY_64
+#  endif
 #else
-#define JUDY_max    JUDY_64
-#endif
-#else
-#define JUDY_max    JUDY_32
+#  define JUDY_max    JUDY_32
 #endif
 
 #ifdef __cplusplus
@@ -135,40 +132,40 @@ extern "C" {
 #endif
 
     /// open a new judy array returning a judy object.
-    Judy *judy_open (unsigned int max, unsigned int depth);
+    Judy * judy_open( unsigned int max, unsigned int depth );
 
     /// close an open judy array, freeing all memory.
-    void judy_close (Judy *judy);
+    void judy_close( Judy * judy );
 
     /// clone an open judy array, duplicating the stack.
-    Judy *judy_clone (Judy *judy);
+    Judy * judy_clone( Judy * judy );
 
     /// allocate data memory within judy array for external use.
-    void *judy_data (Judy *judy, unsigned int amt);
+    void * judy_data( Judy * judy, unsigned int amt );
 
     /// insert a string into the judy array, return cell pointer.
-    JudySlot *judy_cell (Judy *judy, const unsigned char *buff, unsigned int max);
+    JudySlot * judy_cell( Judy * judy, const unsigned char * buff, unsigned int max );
 
     /// retrieve the cell pointer greater than or equal to given key
-    JudySlot *judy_strt (Judy *judy, const unsigned char *buff, unsigned int max);
+    JudySlot * judy_strt( Judy * judy, const unsigned char * buff, unsigned int max );
 
     /// retrieve the cell pointer, or return NULL for a given key.
-    JudySlot *judy_slot (Judy *judy, const unsigned char *buff, unsigned int max);
+    JudySlot * judy_slot( Judy * judy, const unsigned char * buff, unsigned int max );
 
     /// retrieve the string value for the most recent judy query.
-    unsigned int judy_key (Judy *judy, unsigned char *buff, unsigned int max);
+    unsigned int judy_key( Judy * judy, unsigned char * buff, unsigned int max );
 
     /// retrieve the cell pointer for the last string in the array.
-    JudySlot *judy_end (Judy *judy);
+    JudySlot * judy_end( Judy * judy );
 
     /// retrieve the cell pointer for the next string in the array.
-    JudySlot *judy_nxt (Judy *judy);
+    JudySlot * judy_nxt( Judy * judy );
 
     /// retrieve the cell pointer for the prev string in the array.
-    JudySlot *judy_prv (Judy *judy);
+    JudySlot * judy_prv( Judy * judy );
 
     /// delete the key and cell for the current stack entry.
-    JudySlot *judy_del (Judy *judy);
+    JudySlot * judy_del( Judy * judy );
 
 #ifdef __cplusplus
 }

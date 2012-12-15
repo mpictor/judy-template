@@ -28,19 +28,19 @@
 #include "judy.h"
 
 #ifdef linux
-#include <fcntl.h>
-#include <unistd.h>
-#include <errno.h>
-#include <sys/mman.h>
-#include <sys/times.h>
+#  include <fcntl.h>
+#  include <unistd.h>
+#  include <errno.h>
+#  include <sys/mman.h>
+#  include <sys/times.h>
 #else
-#include <windows.h>
-#include <io.h>
+#  include <windows.h>
+#  include <io.h>
 #endif
 
 #include <time.h>
 
-#define PRIuint            "u"
+#define PRIuint "u"
 
 
 //these are initialized in penny.c
@@ -51,8 +51,8 @@ extern unsigned int PennyOff;
 extern unsigned long long PennyMerge;
 
 typedef struct {
-    void *buff;        // record pointer in input file map
-    void *next;        // duplicate chain
+    void * buff;       // record pointer in input file map
+    void * next;       // duplicate chain
 } PennySort;
 
 #endif //SORT_H
