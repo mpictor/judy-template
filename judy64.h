@@ -1,6 +1,6 @@
 #ifndef JUDY64_H
 #define JUDY64_H
-//  Judy arrays 9 NOV 2012 (judy64l.c from http://code.google.com/p/judyarray/ )
+//  Judy arrays 13 DEC 2012 (judy64n.c from http://code.google.com/p/judyarray/ )
 //  This code is public domain.
 
 //  Author Karl Malbrain, malbrain AT yahoo.com
@@ -56,7 +56,7 @@
     #define PRIjudyvalue    "llu"
 
 #else
-//    defines for 32 bit
+    //    defines for 32 bit
 
     typedef unsigned int judyvalue;
     typedef unsigned int JudySlot;
@@ -76,7 +76,7 @@
 //    define the alignment factor for judy nodes and allocations
 //    to enable this feature, set to 64
 
-#define JUDY_cache_line 8    // minimum size is 8 bytes
+#define JUDY_cache_line 8     // minimum size is 8 bytes
 
 #define JUDY_seg    65536
 
@@ -88,7 +88,11 @@ enum JUDY_types {
     JUDY_8            = 4,
     JUDY_16           = 5,
     JUDY_32           = 6,
-    JUDY_span         = 7      // up to 28 tail bytes of key contiguously stored
+#ifdef ASKITIS
+    JUDY_64           = 7
+#else
+    JUDY_span         = 7     // up to 28 tail bytes of key contiguously stored
+#endif
 };
 
 typedef struct {
@@ -112,7 +116,19 @@ typedef struct {
     JudyStack stack[1];       // current cursor
 } Judy;
 
+#ifdef ASKITIS
+int Words = 0;
+int Inserts = 0;
+int Found = 0;
+
+#if JUDY_key_size < 8
+#define JUDY_max    JUDY_16
+#else
+#define JUDY_max    JUDY_64
+#endif
+#else
 #define JUDY_max    JUDY_32
+#endif
 
 #ifdef __cplusplus
 extern "C" {
