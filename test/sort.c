@@ -18,7 +18,7 @@
 //  judy_open with the Integer depth of the Judy Trie as the second
 //  argument.
 
-#include "judy64.h"
+#include "judy.h"
 #include "sort.h"
 
 //    memory map input file and sort

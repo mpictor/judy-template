@@ -22,24 +22,29 @@ if( NOT DEFINED JUDY_OPTIMIZE_FLAGS )
             endif( ${CMAKE_C_COMPILER_VERSION} VERSION_GREATER 4.7.0 )
         endif( DEFINED CMAKE_C_COMPILER_VERSION )
     #elseif( CMAKE_C_COMPILER MATCHES "Visual" )
+    #  set( JUDY_OPTIMIZE_FLAGS "..." )
     else()
         message( "Unrecognized compiler - no optimization flags set. Edit CMakeLists.txt or set JUDY_OPTIMIZE_FLAGS." )
         set( JUDY_OPTIMIZE_FLAGS "" )
     endif( CMAKE_C_COMPILER MATCHES "gcc" )
 endif( NOT DEFINED JUDY_OPTIMIZE_FLAGS )
 
-set( JUDYS_SOURCES judy64.c judy64.h )
+set( JUDYS_SOURCES src/judy.c src/judy.h )
 
 add_library( judy_lib ${JUDYS_SOURCES} )
 set_target_properties( judy_lib PROPERTIES COMPILE_FLAGS "${JUDY_OPTIMIZE_FLAGS}" )
 
-add_executable( pennysort judyPennySort.c sort.c ${JUDYS_SOURCES} )
-add_executable( hexsort judyHexSort.c sort.c ${JUDYS_SOURCES} )
+add_executable( pennysort test/pennySort.c test/sort.c ${JUDYS_SOURCES} )
+add_executable( hexsort test/hexSort.c test/sort.c ${JUDYS_SOURCES} )
 set_target_properties( pennysort hexsort PROPERTIES COMPILE_FLAGS "-DSTANDALONE ${JUDY_OPTIMIZE_FLAGS}" )
 
 
-add_executable( judyLtest judyLtest.cc )
+add_executable( judyLtest test/judyLtest.cc )
 target_link_libraries( judyLtest judy_lib )
 
-# judyArray.h
-# int-int sources?
+#TODO
+# add_executable( judyStest test/judyStest.cc )
+# target_link_libraries( judyStest judy_lib )
+
+include_directories( src test )
+

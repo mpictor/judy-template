@@ -61,7 +61,7 @@
     #endif
 #endif
 
-#include "judy64.h"
+#include "judy.h"
 
 #if defined(STANDALONE) || defined(ASKITIS)
 #include <string.h>

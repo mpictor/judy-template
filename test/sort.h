@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
-#include "judy64.h"
+#include "judy.h"
 
 #ifdef linux
 #include <fcntl.h>

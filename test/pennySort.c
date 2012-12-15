@@ -20,7 +20,7 @@
   #error must define STANDALONE while compiling this file and judy64.c
 #endif
 
-#include "judy64.h"
+#include "judy.h"
 #include "sort.h"
 
 unsigned int MaxMem = 0;
