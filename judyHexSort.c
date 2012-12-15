@@ -11,12 +11,9 @@
 //  Map a set of keys to corresponding memory cells (uints).
 //  Each cell must be set to a non-zero value by the caller.
 
-//  STANDALONE is defined to compile into a string sorter.
 
-//  String mappings are denoted by calling judy_open with zero as
-//  the second argument.  Integer mappings are denoted by calling
-//  judy_open with the Integer depth of the Judy Trie as the second
-//  argument.
+//  Integer mappings are denoted by calling judy_open with the
+//  Integer depth of the Judy Trie as the second argument.
 
 #ifndef STANDALONE
   #error must define STANDALONE while compiling this file and judy64.c
@@ -26,11 +23,13 @@
 #include "sort.h"
 
 unsigned int MaxMem = 0;
-
-//    usage:
-//    a.out [in-file] [out-file] [keysize] [recordlen] [keyoffset] [mergerecs]
-//    where keysize is 10 to indicate pennysort files
-
+/**
+   usage:
+   a.out [in-file] [out-file]
+   where all lines of in-file are 32 chars, hexadecimal
+   On linux, a 1M-line file can be created with the following:
+   hexdump -v -e '2/8 "%08x"' -e '"\n"' /dev/urandom |head -n 1000000 >in-file
+*/
 int main (int argc, char **argv)
 {
 unsigned char buff[1024];
@@ -59,29 +58,15 @@ unsigned int idx;
     if( !out )
         fprintf (stderr, "unable to open output file\n");
 
-    if( argc > 6 )
-        PennyRecs = atoi(argv[6]);
-
-    if( argc > 5 )
-        PennyOff = atoi(argv[5]);
-
-    if( argc > 4 )
-        PennyLine = atoi(argv[4]);
-
     PennyMerge = (unsigned long long)PennyLine * PennyRecs;
 
-    if( argc > 3 ) {
-        PennyKey = atoi(argv[3]);
-        sort (in, argv[2]);
-        return merge (out, argv[2]);
-    }
-
-    judy = judy_open (1024, 4);
+    judy = judy_open (1024, 16/JUDY_key_size);
 
     while( fgets((char *)buff, sizeof(buff), in) ) {
-    uint key[4];
+        judyvalue key[16/JUDY_key_size];
         if( len = strlen((const char *)buff) )
             buff[--len] = 0;                // remove LF
+#if JUDY_key_size == 4
         key[3] = strtoul (buff + 24, NULL, 16);
         buff[24] = 0;
         key[2] = strtoul (buff + 16, NULL, 16);
@@ -89,6 +74,11 @@ unsigned int idx;
         key[1] = strtoul (buff + 8, NULL, 16);
         buff[8] = 0;
         key[0] = strtoul (buff, NULL, 16);
+#else
+        key[1] = strtoull (buff + 16, NULL, 16);
+        buff[16] = 0;
+        key[0] = strtoull (buff, NULL, 16);
+#endif
         *(judy_cell (judy, (void *)key, 0)) += 1;        // count instances of string
         max++;
     }
@@ -98,13 +88,18 @@ unsigned int idx;
     cell = judy_strt (judy, NULL, 0);
 
     if( cell ) do {
-    uint key[4];
+        judyvalue key[16/JUDY_key_size];
         len = judy_key(judy, (void *)key, 0);
         for( idx = 0; idx < *cell; idx++ ){        // spit out duplicates
+#if JUDY_key_size == 4
             fprintf (out, "%.8X", key[0]);
             fprintf (out, "%.8X", key[1]);
             fprintf (out, "%.8X", key[2]);
             fprintf (out, "%.8X", key[3]);
+#else
+            fprintf (out, "%.16llX", key[0]);
+            fprintf (out, "%.16llX", key[1]);
+#endif
             fputc('\n', out);
         }
     } while( cell = judy_nxt (judy) );
