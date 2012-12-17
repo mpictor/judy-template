@@ -14,14 +14,18 @@ For more information, see that site, [Doug Baskins' original](http://judy.source
 
 * Unlike Doug's code, this is ~1250 lines. Unlike Karl's, this is split into several files.
 
+# Templates
+* `judyLArray` - a C++ template wrapper for an int-int Judy Array. JudyKey and JudyValue must be integer types and the same size as a pointer (i.e. 32- or 64-bit)
+* `judySArray` - Same as judyLArray, but with string-int mapping. The above restrictions on JudyValue apply here as well.
+* **TODO** - single-key, multi-value versions of the above
+
 # Files
 * `CMakeLists.txt` - CMake build logic. If you don't have CMake, it should be quite easy to write a file for the build system of your choice.
 
 ## src/
-* `judy.c` - the Judy Array implementation
-* `judy.h` - the Judy Array header
-* `judyLArray.h` - a C++ template wrapper for an int-int Judy Array. JudyKey and JudyValue must be integer types and the same size as a pointer (i.e. 32- or 64-bit)
-* `judySArray.h` - Same as judyLArray, but with string-int mapping. The above restrictions on JudyValue apply here as well.
+* `judy.c`, `judy.h` - implementation of the Judy Array
+* `judyLArray.h` - the judyLArray template
+* `judySArray.h` - the judySArray template
 
 ## test/
 * `hexSort.c` - Sorts a file where each line contains 32 hex chars. Compiles to `hexsort`, which is the same executable as compiling Karl's code with `-DHEXSORT -DSTANDALONE`
