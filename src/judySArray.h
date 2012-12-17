@@ -67,11 +67,12 @@ class judySArray {
         //can this overwrite?
         void insert( const char * key, JudyValue value, unsigned int keyLen = 0 ) {
             assert( value != 0 );
-            assert( keyLen <= _maxKeyLen );
-            assert( keyLen == strlen( key ) );
             if( keyLen == 0 ) {
                 keyLen = strlen( key );
+            } else {
+                assert( keyLen == strlen( key ) );
             }
+            assert( keyLen <= _maxKeyLen );
             _lastSlot = ( JudyValue * ) judy_cell( _judyarray, ( const unsigned char * )key, keyLen );
             if( _lastSlot ) {
                 *_lastSlot = value;
@@ -84,22 +85,24 @@ class judySArray {
         /// retrieve the cell pointer greater than or equal to given key
         /// NOTE what about an atOrBefore function?
         const pair atOrAfter( const char * key, unsigned int keyLen = 0 ) {
-            assert( keyLen <= _maxKeyLen );
-            assert( keyLen == strlen( key ) );
             if( keyLen == 0 ) {
                 keyLen = strlen( key );
+            } else {
+                assert( keyLen == strlen( key ) );
             }
+            assert( keyLen <= _maxKeyLen );
             _lastSlot = ( JudyValue * ) judy_strt( _judyarray, ( const unsigned char * )key, keyLen );
             return mostRecentPair();
         }
 
         /// retrieve the cell pointer, or return NULL for a given key.
         JudyValue find( const char * key, unsigned int keyLen = 0 ) {
-            assert( keyLen <= _maxKeyLen );
-            assert( keyLen == strlen( key ) );
             if( keyLen == 0 ) {
                 keyLen = strlen( key );
+            } else {
+                assert( keyLen == strlen( key ) );
             }
+            assert( keyLen <= _maxKeyLen );
             _lastSlot = ( JudyValue * ) judy_slot( _judyarray, ( const unsigned char * )key, keyLen );
             if( _lastSlot ) {
                 _success = true;
