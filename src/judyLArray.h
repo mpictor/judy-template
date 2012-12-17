@@ -35,10 +35,10 @@ class judyLArray {
         bool _success;
     public:
         typedef judylKVpair< JudyKey, JudyValue > pair;
-        judyLArray(): _maxKeyLen( 2 ^ ( sizeof( JudyKey ) ) ), _depth( sizeof( JudyKey ) ), _success( true ) {
+        judyLArray(): _maxKeyLen( 2 ^ ( sizeof( JudyKey ) + 2 ) ), _depth( 16 / JUDY_key_size ), _success( true ) {
             _judyarray = judy_open( _maxKeyLen, _depth );
             _buff = new unsigned char[_maxKeyLen];
-            assert( sizeof( JudyValue ) == sizeof( this ) && "JudyValue *must* be the same size as a pointer!" );
+            assert( sizeof( JudyValue ) == JUDY_key_size && "JudyValue *must* be the same size as a pointer!" );
         }
 
         explicit judyLArray( const judyLArray< JudyKey, JudyValue > & other ): _maxKeyLen( other._maxKeyLen ),
