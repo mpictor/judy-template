@@ -6,16 +6,12 @@ This uses [Karl Malbrain's implementation](http://code.google.com/p/judyarray/) 
 * `judyLArray` - a C++ template wrapper for an int-int Judy Array. JudyKey and JudyValue must be integer types and the same size as a pointer (i.e. 32- or 64-bit)
 * `judySArray` - Same as judyLArray, but with string-int mapping. The above restrictions on JudyValue apply here as well.
 * **TODO** - single-key, multi-value versions of the above
-* **TODO** - single-key, n-value versions of the above (?)
+* **TODO** - single-key, n-value versions of the above *(?)*
 
 ## Comparison between this and the versions Karl and Doug wrote
-
 * Doug Baskins' code is licenced under the LGPL. While more permissive than the GPL, it's still not always acceptable. His code is very fast but weighs in at ~20k lines.
-
 * Karl Malbrain's code is a single file containing the judy array and the test code; use requires creating a header.
-
 * Both of the above are written in C, so they don't fit neatly into object-oriented C++.
-
 * Unlike Doug's code, this is ~1250 lines. Unlike Karl's, this is split into several files.
 
 ## Files
@@ -37,9 +33,9 @@ This uses [Karl Malbrain's implementation](http://code.google.com/p/judyarray/) 
 ## Compiling
 * requires C and C++ compilers, CMake.
 * from the command line:
-**  `mkdir build; cd build`
-**  `cmake .. -DENABLE_TESTING=TRUE`
-**  `make`
+ *  `mkdir build; cd build`
+ *  `cmake .. -DENABLE_TESTING=TRUE`
+ *  `make`
 
 ## License
 
