@@ -16,18 +16,16 @@ This uses [Karl Malbrain's implementation](http://code.google.com/p/judyarray/) 
 
 ## Files
 * `CMakeLists.txt` - CMake build logic. If you don't have CMake, it should be quite easy to write a file for the build system of your choice.
-
-### src/
-* `judy.c`, `judy.h` - implementation of the Judy Array
-* `judyLArray.h` - the judyLArray template
-* `judySArray.h` - the judySArray template
-
-### test/
-* `hexSort.c` - Sorts a file where each line contains 32 hex chars. Compiles to `hexsort`, which is the same executable as compiling Karl's code with `-DHEXSORT -DSTANDALONE`
-* `pennySort.c` - Sorts strings; compiles to `pennysort`. Same as compiling Karl's code with `-DSTANDALONE`.
-* `sort.c`, `sort.h` - Karl's sorting functions. Only used by `hexsort` and `pennysort`.
-* `judyLtest.cc` - an incomplete test of the judyLArray template.
-* `judyStest.cc` - an incomplete test of the judySArray template.
+* **src/**
+ * `judy.c`, `judy.h` - implementation of the Judy Array
+ * `judyLArray.h` - the judyLArray template
+ * `judySArray.h` - the judySArray template
+* **test/**
+ * `hexSort.c` - Sorts a file where each line contains 32 hex chars. Compiles to `hexsort`, which is the same executable as compiling Karl's code with `-DHEXSORT -DSTANDALONE`
+ * `pennySort.c` - Sorts strings; compiles to `pennysort`. Same as compiling Karl's code with `-DSTANDALONE`.
+ * `sort.c`, `sort.h` - Karl's sorting functions. Only used by `hexsort` and `pennysort`.
+ * `judyLtest.cc` - an incomplete test of the judyLArray template.
+ * `judyStest.cc` - an incomplete test of the judySArray template.
 
 
 ## Compiling
@@ -39,7 +37,7 @@ This uses [Karl Malbrain's implementation](http://code.google.com/p/judyarray/) 
 
 ## License
 
-Karl Malbrain's code is public domain; what I've added is public domain as well.
+Karl Malbrain's judy array code is public domain; what I've added is public domain as well.
 
-# Contact
+## Contact
 mpictor -a-t- gmail
