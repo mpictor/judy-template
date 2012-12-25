@@ -29,37 +29,36 @@ template< typename JudyKey, typename JudyValue >
 class judyLArray {
     protected:
         Judy * _judyarray;
-        unsigned int _maxKeyLen, _depth;
+        unsigned int _maxLevels, _depth;
         JudyValue * _lastSlot;
-        unsigned char * _buff; //TODO change type for judyL?
+        JudyKey _buff[1];
         bool _success;
     public:
         typedef judylKVpair< JudyKey, JudyValue > pair;
-        judyLArray(): _maxKeyLen( 2 ^ ( sizeof( JudyKey ) + 2 ) ), _depth( 16 / JUDY_key_size ), _success( true ) {
-            _judyarray = judy_open( _maxKeyLen, _depth );
-            _buff = new unsigned char[_maxKeyLen];
+        judyLArray(): _maxLevels( 2 ^ ( sizeof( JudyKey ) + 2 ) ), _depth( 16 / JUDY_key_size ), _success( true ) {
+            _judyarray = judy_open( _maxLevels, _depth );
+            _buff[0] = 0;
             assert( sizeof( JudyValue ) == JUDY_key_size && "JudyValue *must* be the same size as a pointer!" );
         }
 
-        explicit judyLArray( const judyLArray< JudyKey, JudyValue > & other ): _maxKeyLen( other._maxKeyLen ),
+        explicit judyLArray( const judyLArray< JudyKey, JudyValue > & other ): _maxLevels( other._maxLevels ),
             _depth( other._depth ), _success( other._success ) {
             _judyarray = judy_clone( other._judyarray );
-            _buff = new unsigned char[_maxKeyLen];
-            strncpy( _buff, other._buff, _maxKeyLen );
-            _buff[ _maxKeyLen ] = '\0'; //ensure that _buff is null-terminated, since strncpy won't necessarily do so
+            _buff[0] = other._buff[0];
             find( _buff ); //set _lastSlot
         }
 
         ~judyLArray() {
             judy_close( _judyarray );
-            delete[] _buff;
         }
 
         JudyValue getLastValue() {
+            assert( _lastSlot );
             return &_lastSlot;
         }
 
         void setLastValue( JudyValue value ) {
+            assert( _lastSlot );
             &_lastSlot = value;
         }
 
@@ -104,7 +103,7 @@ class judyLArray {
         /// retrieve the key-value pair for the most recent judy query.
         inline const pair mostRecentPair() {
             pair kv;
-            judy_key( _judyarray, _buff, 0 );
+            judy_key( _judyarray, (unsigned char *) _buff, 0 );
             if( _lastSlot ) {
                 kv.value = *_lastSlot;
                 _success = true;
@@ -112,7 +111,7 @@ class judyLArray {
                 kv.value = ( JudyValue ) 0;
                 _success = false;
             }
-            kv.key = ( JudyKey ) * _buff;
+            kv.key = _buff[0];
             return kv;
         }
 
