@@ -10,7 +10,7 @@ This uses [Karl Malbrain's implementation](http://code.google.com/p/judyarray/) 
 
 ## Comparison between this and the versions Karl and Doug wrote
 * Doug Baskins' code is licenced under the LGPL. While more permissive than the GPL, it's still not always acceptable. His code is very fast but weighs in at ~20k lines.
-* Karl Malbrain's code is a single file containing the judy array and the test code; use requires creating a header.
+* Karl Malbrain's code is ~1250 lines, in a single file containing the judy array and the test code; use requires creating a header.
 * Both of the above are written in C, so they don't fit neatly into object-oriented C++.
 * Unlike Doug's code, this is ~1250 lines. Unlike Karl's, this is split into several files.
 
