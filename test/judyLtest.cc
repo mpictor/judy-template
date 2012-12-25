@@ -1,11 +1,13 @@
 #include <iostream>
 #include <stdint.h>
+#include <stdlib.h>
+
 #include "judyLArray.h"
 
 int main() {
     std::cout.setf(std::ios::boolalpha);
-
     judyLArray< uint64_t, uint64_t > jl;
+    std::cout << "size of judyLArray: " << sizeof( jl ) << std::endl;
     jl.insert(5, 12);
     jl.insert(6, 2);
     jl.insert(7, 312);
