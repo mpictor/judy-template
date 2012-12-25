@@ -74,7 +74,9 @@
 //    define the alignment factor for judy nodes and allocations
 //    to enable this feature, set to 64
 
-#define JUDY_cache_line 8     // minimum size is 8 bytes
+#define JUDY_cache_line 64     // minimum size is 8 bytes
+    // can be calculated using http://stackoverflow.com/a/4049562/382458 - but that would limit optimization!
+    // 10x 1M key hexsort, line size 64: 9.949s; size 8: 10.018s --> 1% improvement for 64; however, this may be dwarfed by the sort code
 
 #define JUDY_seg    65536
 
