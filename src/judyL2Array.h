@@ -131,6 +131,13 @@ protected:
             return kv;
         }
 
+        /// retrieve the first key-value pair in the array
+        const cpair & begin() {
+            JudyKey key = 0;
+            _lastSlot = ( JudyValue * ) judy_strt( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
+            return mostRecentPair();
+        }
+
         /// retrieve the last key-value pair in the array
         const cpair & end() {
             _lastSlot = ( vector * ) judy_end( _judyarray );
@@ -164,10 +171,11 @@ protected:
             }
         }
 
-        ///return true if the array is empty
-        ///FIXME pretty sure this won't work...
+        /// true if the array is empty
         bool isEmpty() {
-            return ( _judyarray ? false : true );
+            JudyKey key = 0;
+            vector s = ( JudyValue * ) judy_strt( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
+            return ( s ? false : true );
         }
 };
 #endif //JUDYL2ARRAY_H
