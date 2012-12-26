@@ -53,8 +53,11 @@ if( ENABLE_TESTING )
     add_executable( judyLtest test/judyLtest.cc )
     target_link_libraries( judyLtest judy_lib )
 
+    add_executable( judyL2test test/judyL2test.cc )
+    target_link_libraries( judyL2test judy_lib )
+
     add_executable( judyStest test/judyStest.cc )
     target_link_libraries( judyStest judy_lib )
 
-    set_target_properties( judyLtest judyStest PROPERTIES COMPILE_FLAGS "${JUDY_OPTIMIZE_FLAGS}" )
+    set_target_properties( judyLtest judyL2test judyStest PROPERTIES COMPILE_FLAGS "${JUDY_OPTIMIZE_FLAGS}" )
 endif( ENABLE_TESTING )
