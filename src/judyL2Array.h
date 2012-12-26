@@ -37,17 +37,19 @@ struct judyl2KVpair {
 template< typename JudyKey, typename JudyValue >
 class judyL2Array {
     public:
-        typedef std::vector< JudyValue > * vector;
-        typedef judyl2KVpair< JudyKey, vector > pair;
-    protected:
+        typedef std::vector< JudyValue > vector;
+        typedef const std::vector< JudyValue > cvector;
+        typedef judyl2KVpair< JudyKey, vector * > pair;
+        typedef judyl2KVpair< JudyKey, cvector * > cpair;
+protected:
         Judy * _judyarray;
         unsigned int _maxLevels, _depth;
-        std::vector< JudyValue > * _lastSlot;
+        vector ** _lastSlot;
         JudyKey _buff[1];
         bool _success;
         //const int allocSize = sizeof( std::vector < JudyValue > ); //TODO store vectors inside judy with placement new?
     public:
-        judyL2Array(): _maxLevels( 2 ^ ( sizeof( JudyKey ) + 2 ) ), _depth( 16 / JUDY_key_size ), _success( true ) {
+        judyL2Array(): _maxLevels( 2 ^ ( sizeof( JudyKey ) + 2 ) ), _depth( 16 / JUDY_key_size ), _lastSlot( 0 ), _success( true ) {
             _judyarray = judy_open( _maxLevels, _depth );
             _buff[0] = 0;
             assert( sizeof( JudyKey ) == JUDY_key_size && "JudyKey *must* be the same size as a pointer!" );
@@ -82,28 +84,32 @@ class judyL2Array {
         // allocate data memory within judy array for external use.
         // void *judy_data (Judy *judy, unsigned int amt);
 
-        //can this overwrite?
+        /// insert value into the vector for key.
         void insert( JudyKey key, JudyValue value ) {
-            _lastSlot = ( JudyValue * ) judy_cell( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
-            if( _lastSlot ) {
-                _lastSlot = new vector;
+            _lastSlot = ( vector ** ) judy_cell( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
+            if( ! ( * _lastSlot ) ) {
+                * _lastSlot = new vector;
             }
-            _lastSlot->insert( value );
+            ( * _lastSlot )->push_back( value );
         }
+
+        //TODO
+        // for a given key, append to or replace the vector
+        //void insert( JudyKey key, vector values, bool replace = false ) {}
 
         /// retrieve the cell pointer greater than or equal to given key
         /// NOTE what about an atOrBefore function?
         const pair atOrAfter( JudyKey key ) {
-            _lastSlot = ( JudyValue * ) judy_strt( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
+            _lastSlot = ( vector ** ) judy_strt( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
             return mostRecentPair();
         }
 
         /// retrieve the cell pointer, or return NULL for a given key.
-        JudyValue find( JudyKey key ) {
-            _lastSlot = ( JudyValue * ) judy_slot( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
-            if( _lastSlot ) {
+        cvector * find( JudyKey key ) {
+            _lastSlot = ( vector ** ) judy_slot( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
+            if( ( _lastSlot ) && ( * _lastSlot ) ) {
                 _success = true;
-                return *_lastSlot;
+                return * _lastSlot;
             } else {
                 _success = false;
                 return 0;
@@ -126,19 +132,19 @@ class judyL2Array {
         }
 
         /// retrieve the last key-value pair in the array
-        const pair & end() {
-            _lastSlot = ( JudyValue * ) judy_end( _judyarray );
+        const cpair & end() {
+            _lastSlot = ( vector * ) judy_end( _judyarray );
             return mostRecentPair();
         }
 
         /// retrieve the key-value pair for the next string in the array.
-        const pair & next() {
+        const cpair & next() {
             _lastSlot = ( JudyValue * ) judy_nxt( _judyarray );
             return mostRecentPair();
         }
 
         /// retrieve the key-value pair for the prev string in the array.
-        const pair & previous() {
+        const cpair & previous() {
             _lastSlot = ( JudyValue * ) judy_prv( _judyarray );
             return mostRecentPair();
         }
@@ -147,9 +153,11 @@ class judyL2Array {
          * getLastValue() will return the entry before the one that was deleted
          * \sa isEmpty()
          */
-        bool removeEntry( JudyKey * key ) {
-            if( judy_slot( _judyarray, key, sizeof( key ) ) ) {
+        bool removeEntry( JudyKey key ) {
+            if( judy_slot( _judyarray, ( const unsigned char * ) &key, sizeof( key ) ) ) {
                 _lastSlot = ( JudyValue * ) judy_del( _judyarray );
+//                 _lastSlot->~vector(); //for use with placement new
+                delete _lastSlot;
                 return true;
             } else {
                 return false;
