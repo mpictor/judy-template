@@ -80,6 +80,7 @@ protected:
         bool success() {
             return _success;
         }
+
         //TODO
         // allocate data memory within judy array for external use.
         // void *judy_data (Judy *judy, unsigned int amt);
@@ -134,7 +135,7 @@ protected:
         /// retrieve the first key-value pair in the array
         const cpair & begin() {
             JudyKey key = 0;
-            _lastSlot = ( JudyValue * ) judy_strt( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
+            _lastSlot = ( vector * ) judy_strt( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
             return mostRecentPair();
         }
 
@@ -146,13 +147,13 @@ protected:
 
         /// retrieve the key-value pair for the next string in the array.
         const cpair & next() {
-            _lastSlot = ( JudyValue * ) judy_nxt( _judyarray );
+            _lastSlot = ( vector * ) judy_nxt( _judyarray );
             return mostRecentPair();
         }
 
         /// retrieve the key-value pair for the prev string in the array.
         const cpair & previous() {
-            _lastSlot = ( JudyValue * ) judy_prv( _judyarray );
+            _lastSlot = ( vector * ) judy_prv( _judyarray );
             return mostRecentPair();
         }
 
@@ -162,7 +163,7 @@ protected:
          */
         bool removeEntry( JudyKey key ) {
             if( judy_slot( _judyarray, ( const unsigned char * ) &key, sizeof( key ) ) ) {
-                _lastSlot = ( JudyValue * ) judy_del( _judyarray );
+                _lastSlot = ( vector * ) judy_del( _judyarray );
 //                 _lastSlot->~vector(); //for use with placement new
                 delete _lastSlot;
                 return true;
@@ -174,7 +175,7 @@ protected:
         /// true if the array is empty
         bool isEmpty() {
             JudyKey key = 0;
-            vector s = ( JudyValue * ) judy_strt( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
+            vector s = ( vector * ) judy_strt( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
             return ( s ? false : true );
         }
 };

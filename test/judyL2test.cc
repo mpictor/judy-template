@@ -62,8 +62,10 @@ int main() {
 
     //TODO test all of judyL2Array
     if( pass ) {
+        std::cout << "All tests passed." << std::endl;
         exit( EXIT_SUCCESS );
     } else {
+        std::cout << "At least one test failed." << std::endl;
         exit( EXIT_FAILURE );
     }
 }
