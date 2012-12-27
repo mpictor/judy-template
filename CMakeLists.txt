@@ -3,7 +3,8 @@ cmake_minimum_required(VERSION 2.8)
 project( JudyTemplates )
 
 if( NOT DEFINED CMAKE_BUILD_TYPE )
-    set( CMAKE_BUILD_TYPE "RelWithDebInfo" ) #optimize, but include debug info
+    # set( CMAKE_BUILD_TYPE "RelWithDebInfo" ) #optimize, but include debug info
+    set( CMAKE_BUILD_TYPE "Release" )
 endif( NOT DEFINED CMAKE_BUILD_TYPE )
 
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib )
@@ -28,6 +29,7 @@ if( NOT DEFINED JUDY_OPTIMIZE_FLAGS )
         set( JUDY_OPTIMIZE_FLAGS "" )
     endif( CMAKE_COMPILER_IS_GNUCC )
 endif( NOT DEFINED JUDY_OPTIMIZE_FLAGS )
+add_definitions( ${JUDY_OPTIMIZE_FLAGS} )
 
 set( JUDYS_SOURCES src/judy.c src/judy.h )
 
@@ -35,8 +37,7 @@ if( CMAKE_COMPILER_IS_GNUCC )
     add_definitions( -pedantic -W -Wall -Wundef -Wfloat-equal -Wshadow -Winline -Wno-long-long )
 endif( CMAKE_COMPILER_IS_GNUCC )
 
-add_library( judy_lib ${JUDYS_SOURCES} )
-set_target_properties( judy_lib PROPERTIES COMPILE_FLAGS "${JUDY_OPTIMIZE_FLAGS}" )
+add_library( judy_lib STATIC ${JUDYS_SOURCES} )
 
 include_directories( src )
 
@@ -47,7 +48,7 @@ if( ENABLE_TESTING )
 
     add_executable( pennysort test/pennySort.c test/sort.c ${JUDYS_SOURCES} )
     add_executable( hexsort test/hexSort.c test/sort.c ${JUDYS_SOURCES} )
-    set_target_properties( pennysort hexsort PROPERTIES COMPILE_FLAGS "-DSTANDALONE ${JUDY_OPTIMIZE_FLAGS}" )
+    set_target_properties( pennysort hexsort PROPERTIES COMPILE_FLAGS "-DSTANDALONE" )
 
 
     add_executable( judyLtest test/judyLtest.cc )
@@ -59,5 +60,4 @@ if( ENABLE_TESTING )
     add_executable( judyStest test/judyStest.cc )
     target_link_libraries( judyStest judy_lib )
 
-    set_target_properties( judyLtest judyL2test judyStest PROPERTIES COMPILE_FLAGS "${JUDY_OPTIMIZE_FLAGS}" )
 endif( ENABLE_TESTING )
