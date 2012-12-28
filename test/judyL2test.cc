@@ -46,7 +46,7 @@ int main() {
     jl.insert( 7,  312 );
     jl.insert( 11, 412 );
     jl.insert( 7,  313 );
-    jl2a::pair kv = jl.atOrAfter(4);
+    jl2a::cpair kv = jl.atOrAfter(4);
     std::cout << "atOrAfter test ..." << std::endl;
     if( kv.value != 0 && jl.success() ) {
         std::cout << "    key " << kv.key << "    value " << kv.value->at( 0 ) << std::endl;

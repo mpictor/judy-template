@@ -1,13 +1,11 @@
 #ifndef JUDYL2ARRAY_H
 #define JUDYL2ARRAY_H
 
-///NOTE is this worth pursuing? might be better to use *std::vector for JudyValue...
-
 /****************************************************************************//**
 * \file judyL2Array.h C++ wrapper for judyL2 array implementation
 *
-*    A judyL2 array maps a set of ints to multiple ints, similar to std::multimap.
-*    Internally, this is a judyL array of std::vector< JudyValue >.
+* A judyL2 array maps JudyKey's to multiple JudyValue's, similar to
+* std::multimap. Internally, this is a judyL array of std::vector< JudyValue >.
 *
 *    Author: Mark Pictor. Public domain.
 *
@@ -15,20 +13,15 @@
 
 #include "judy.h"
 #include "assert.h"
-// #include <string.h>
 #include <vector>
 
-template< typename JudyKey, typename JudyValue >
+template< typename JudyKey, typename vec >
 struct judyl2KVpair {
     JudyKey key;
-    JudyValue value;
+    vec value;
 };
 
-/**
- * integer keys are passed as arrays of native integers (32 or 64 bits) and the depth of the array is passed when the Judy array is created. The address of the high-order integer key pointer is passed to the judy functions as a character pointer and the string length argument should be set to the depth * JUDY_key_size.
- */
-
-/** A judyL2 array maps a set of ints to multiple ints, similar to std::multimap.
+/** A judyL2 array maps JudyKey's to multiple JudyValue's, similar to std::multimap.
  * Internally, this is a judyL array of std::vector< JudyValue >.
  * The first template parameter must be the same size as a void*
  *  \param JudyKey the type of the key, i.e. uint64_t, etc
@@ -38,21 +31,20 @@ template< typename JudyKey, typename JudyValue >
 class judyL2Array {
     public:
         typedef std::vector< JudyValue > vector;
-        typedef const std::vector< JudyValue > cvector;
+        typedef const vector cvector;
         typedef judyl2KVpair< JudyKey, vector * > pair;
         typedef judyl2KVpair< JudyKey, cvector * > cpair;
-protected:
+    protected:
         Judy * _judyarray;
         unsigned int _maxLevels, _depth;
         vector ** _lastSlot;
         JudyKey _buff[1];
         bool _success;
-        //const int allocSize = sizeof( std::vector < JudyValue > ); //TODO store vectors inside judy with placement new?
     public:
         judyL2Array(): _maxLevels( 2 ^ ( sizeof( JudyKey ) + 2 ) ), _depth( 16 / JUDY_key_size ), _lastSlot( 0 ), _success( true ) {
+            assert( sizeof( JudyKey ) == JUDY_key_size && "JudyKey *must* be the same size as a pointer!" );
             _judyarray = judy_open( _maxLevels, _depth );
             _buff[0] = 0;
-            assert( sizeof( JudyKey ) == JUDY_key_size && "JudyKey *must* be the same size as a pointer!" );
         }
 
         explicit judyL2Array( const judyL2Array< JudyKey, JudyValue > & other ): _maxLevels( other._maxLevels ),
@@ -62,9 +54,20 @@ protected:
             find( _buff ); //set _lastSlot
         }
 
+        /// calls clear, so should be safe to call at any point
         ~judyL2Array() {
-            //TODO delete all std::vectors first
+            clear();
             judy_close( _judyarray );
+        }
+
+        /// delete all vectors and empty the array
+        void clear() {
+            JudyKey key = 0;
+            while( 0 != ( _lastSlot = ( vector ** ) judy_strt( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size ) ) ) {
+                //( * _lastSlot )->~vector(); //TODO: placement new
+                delete ( * _lastSlot );
+                judy_del( _judyarray );
+            }
         }
 
         JudyValue getLastValue() {
@@ -81,17 +84,34 @@ protected:
             return _success;
         }
 
+        /** TODO
+         * test for std::vector::shrink_to_fit (C++11), use it once the array is as full as it will be
+         * void freeUnused() {...}
+         */
+
         //TODO
         // allocate data memory within judy array for external use.
         // void *judy_data (Judy *judy, unsigned int amt);
 
         /// insert value into the vector for key.
-        void insert( JudyKey key, JudyValue value ) {
+        bool insert( JudyKey key, JudyValue value ) {
             _lastSlot = ( vector ** ) judy_cell( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
-            if( ! ( * _lastSlot ) ) {
-                * _lastSlot = new vector;
+            if( _lastSlot ) {
+                if( ! ( * _lastSlot ) ) {
+                    * _lastSlot = new vector;
+                    /* TODO store vectors inside judy with placement new
+                    * vector * n = judy_data( _judyarray, sizeof( std::vector < JudyValue > ) );
+                    * new(n) vector;
+                    * *_lastSlot = n;
+                    * NOTE - memory alloc'd via judy_data will not be freed until the array is freed (judy_close)
+                    */
+                }
+                ( * _lastSlot )->push_back( value );
+                _success = true;
+            } else {
+                _success = false;
             }
-            ( * _lastSlot )->push_back( value );
+            return _success;
         }
 
         //TODO
@@ -100,7 +120,7 @@ protected:
 
         /// retrieve the cell pointer greater than or equal to given key
         /// NOTE what about an atOrBefore function?
-        const pair atOrAfter( JudyKey key ) {
+        const cpair atOrAfter( JudyKey key ) {
             _lastSlot = ( vector ** ) judy_strt( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
             return mostRecentPair();
         }
@@ -118,8 +138,8 @@ protected:
         }
 
         /// retrieve the key-value pair for the most recent judy query.
-        inline const pair mostRecentPair() {
-            pair kv;
+        inline const cpair mostRecentPair() {
+            cpair kv;
             judy_key( _judyarray, (unsigned char *) _buff, _depth * JUDY_key_size );
             if( _lastSlot ) {
                 kv.value = *_lastSlot;
@@ -135,25 +155,25 @@ protected:
         /// retrieve the first key-value pair in the array
         const cpair & begin() {
             JudyKey key = 0;
-            _lastSlot = ( vector * ) judy_strt( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
+            _lastSlot = ( vector ** ) judy_strt( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
             return mostRecentPair();
         }
 
         /// retrieve the last key-value pair in the array
         const cpair & end() {
-            _lastSlot = ( vector * ) judy_end( _judyarray );
+            _lastSlot = ( vector ** ) judy_end( _judyarray );
             return mostRecentPair();
         }
 
         /// retrieve the key-value pair for the next string in the array.
         const cpair & next() {
-            _lastSlot = ( vector * ) judy_nxt( _judyarray );
+            _lastSlot = ( vector ** ) judy_nxt( _judyarray );
             return mostRecentPair();
         }
 
         /// retrieve the key-value pair for the prev string in the array.
         const cpair & previous() {
-            _lastSlot = ( vector * ) judy_prv( _judyarray );
+            _lastSlot = ( vector ** ) judy_prv( _judyarray );
             return mostRecentPair();
         }
 
@@ -162,10 +182,10 @@ protected:
          * \sa isEmpty()
          */
         bool removeEntry( JudyKey key ) {
-            if( judy_slot( _judyarray, ( const unsigned char * ) &key, sizeof( key ) ) ) {
-                _lastSlot = ( vector * ) judy_del( _judyarray );
-//                 _lastSlot->~vector(); //for use with placement new
+            if( 0 != ( _lastSlot = ( vector ** ) judy_slot( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size ) ) ) {
+                // _lastSlot->~vector(); //for use with placement new
                 delete _lastSlot;
+                _lastSlot = ( vector ** ) judy_del( _judyarray );
                 return true;
             } else {
                 return false;
@@ -175,8 +195,7 @@ protected:
         /// true if the array is empty
         bool isEmpty() {
             JudyKey key = 0;
-            vector s = ( vector * ) judy_strt( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
-            return ( s ? false : true );
+            return ( ( judy_strt( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size ) ) ? false : true );
         }
 };
 #endif //JUDYL2ARRAY_H
