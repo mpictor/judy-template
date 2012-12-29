@@ -145,7 +145,7 @@ extern "C" {
     /// allocate data memory within judy array for external use.
     void * judy_data( Judy * judy, unsigned int amt );
 
-    /// insert a string into the judy array, return cell pointer.
+    /// insert a key into the judy array, return cell pointer.
     JudySlot * judy_cell( Judy * judy, const unsigned char * buff, unsigned int max );
 
     /// retrieve the cell pointer greater than or equal to given key
