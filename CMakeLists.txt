@@ -53,11 +53,18 @@ if( ENABLE_TESTING )
 
     add_executable( judyLtest test/judyLtest.cc )
     target_link_libraries( judyLtest judy_lib )
+    add_test( judyLtest judyLtest )
 
     add_executable( judyL2test test/judyL2test.cc )
     target_link_libraries( judyL2test judy_lib )
+    add_test( judyL2test judyL2test )
 
     add_executable( judyStest test/judyStest.cc )
     target_link_libraries( judyStest judy_lib )
+    add_test( judyStest judyStest )
+
+    add_executable( judyS2test test/judyS2test.cc )
+    target_link_libraries( judyS2test judy_lib )
+    add_test( judyS2test judyS2test )
 
 endif( ENABLE_TESTING )
