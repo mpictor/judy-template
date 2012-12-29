@@ -1,11 +1,11 @@
-#ifndef JUDYLARRAY_CPP_H
-#define JUDYLARRAY_CPP_H
+#ifndef JUDYLARRAY_H
+#define JUDYLARRAY_H
 
 /****************************************************************************//**
 * \file judyLArray.h C++ wrapper for judyL array implementation
 *
-*    A judyL array maps a set of ints to corresponding memory cells.
-*    Each cell must be set to a non-zero value by the caller.
+* A judyL array maps JudyKey's to corresponding memory cells, each containing
+* a JudyValue. Each cell must be set to a non-zero value by the caller.
 *
 *    Author: Mark Pictor. Public domain.
 *
@@ -13,7 +13,6 @@
 
 #include "judy.h"
 #include "assert.h"
-#include <string.h>
 
 template< typename JudyKey, typename JudyValue >
 struct judylKVpair {
@@ -21,7 +20,10 @@ struct judylKVpair {
     JudyValue value;
 };
 
-/** The following template parameters must be the same size as a void*
+/** A judyL array maps JudyKey's to corresponding memory cells, each containing
+ * a JudyValue. Each cell must be set to a non-zero value by the caller.
+ *
+ * Both template parameters must be the same size as a void*
  *  \param JudyKey the type of the key, i.e. uint64_t, pointer-to-object, etc
  *  \param JudyValue the type of the value
  */
@@ -35,10 +37,11 @@ class judyLArray {
         bool _success;
     public:
         typedef judylKVpair< JudyKey, JudyValue > pair;
-        judyLArray(): _maxLevels( 2 ^ ( sizeof( JudyKey ) + 2 ) ), _depth( 16 / JUDY_key_size ), _success( true ) {
+        judyLArray(): _maxLevels( 2 ^ ( sizeof( JudyKey ) + 2 ) ), _depth( 16 / JUDY_key_size ), _lastSlot( 0 ), _success( true ) {
+            assert( sizeof( JudyKey ) == JUDY_key_size && "JudyKey *must* be the same size as a pointer!" );
+            assert( sizeof( JudyValue ) == JUDY_key_size && "JudyValue *must* be the same size as a pointer!" );
             _judyarray = judy_open( _maxLevels, _depth );
             _buff[0] = 0;
-            assert( sizeof( JudyValue ) == JUDY_key_size && "JudyValue *must* be the same size as a pointer!" );
         }
 
         explicit judyLArray( const judyLArray< JudyKey, JudyValue > & other ): _maxLevels( other._maxLevels ),
@@ -50,6 +53,13 @@ class judyLArray {
 
         ~judyLArray() {
             judy_close( _judyarray );
+        }
+
+        void clear() {
+            JudyKey key = 0;
+            while( 0 != ( _lastSlot = ( JudyValue * ) judy_strt( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size ) ) ) {
+                judy_del( _judyarray );
+            }
         }
 
         JudyValue getLastValue() {
@@ -69,28 +79,29 @@ class judyLArray {
         // allocate data memory within judy array for external use.
         // void *judy_data (Judy *judy, unsigned int amt);
 
-        //can this overwrite?
-        void insert( JudyKey key, JudyValue value ) {
+        /// insert or overwrite value for key
+        bool insert( JudyKey key, JudyValue value ) {
             assert( value != 0 );
-            _lastSlot = ( JudyValue * ) judy_cell( _judyarray, ( const unsigned char * ) &key, 0 );
+            _lastSlot = ( JudyValue * ) judy_cell( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
             if( _lastSlot ) {
                 *_lastSlot = value;
                 _success = true;
             } else {
                 _success = false;
             }
+            return _success;
         }
 
         /// retrieve the cell pointer greater than or equal to given key
         /// NOTE what about an atOrBefore function?
         const pair atOrAfter( JudyKey key ) {
-            _lastSlot = ( JudyValue * ) judy_strt( _judyarray, ( const unsigned char * ) &key, 0 );
+            _lastSlot = ( JudyValue * ) judy_strt( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
             return mostRecentPair();
         }
 
         /// retrieve the cell pointer, or return NULL for a given key.
         JudyValue find( JudyKey key ) {
-            _lastSlot = ( JudyValue * ) judy_slot( _judyarray, ( const unsigned char * ) &key, 0 );
+            _lastSlot = ( JudyValue * ) judy_slot( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
             if( _lastSlot ) {
                 _success = true;
                 return *_lastSlot;
@@ -103,7 +114,7 @@ class judyLArray {
         /// retrieve the key-value pair for the most recent judy query.
         inline const pair mostRecentPair() {
             pair kv;
-            judy_key( _judyarray, (unsigned char *) _buff, 0 );
+            judy_key( _judyarray, (unsigned char *) _buff, _depth * JUDY_key_size );
             if( _lastSlot ) {
                 kv.value = *_lastSlot;
                 _success = true;
@@ -115,19 +126,26 @@ class judyLArray {
             return kv;
         }
 
+        /// retrieve the first key-value pair in the array
+        const pair & begin() {
+            JudyKey key = 0;
+            _lastSlot = ( JudyValue * ) judy_strt( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
+            return mostRecentPair();
+        }
+
         /// retrieve the last key-value pair in the array
         const pair & end() {
             _lastSlot = ( JudyValue * ) judy_end( _judyarray );
             return mostRecentPair();
         }
 
-        /// retrieve the key-value pair for the next string in the array.
+        /// retrieve the key-value pair for the next key in the array.
         const pair & next() {
             _lastSlot = ( JudyValue * ) judy_nxt( _judyarray );
             return mostRecentPair();
         }
 
-        /// retrieve the key-value pair for the prev string in the array.
+        /// retrieve the key-value pair for the prev key in the array.
         const pair & previous() {
             _lastSlot = ( JudyValue * ) judy_prv( _judyarray );
             return mostRecentPair();
@@ -138,7 +156,7 @@ class judyLArray {
          * \sa isEmpty()
          */
         bool removeEntry( JudyKey * key ) {
-            if( judy_slot( _judyarray, key, sizeof( key ) ) ) {
+            if( judy_slot( _judyarray, key, _depth * JUDY_key_size ) ) {
                 _lastSlot = ( JudyValue * ) judy_del( _judyarray );
                 return true;
             } else {
@@ -146,9 +164,10 @@ class judyLArray {
             }
         }
 
-        ///return true if the array is empty
+        /// true if the array is empty
         bool isEmpty() {
-            return ( _judyarray ? false : true );
+            JudyKey key = 0;
+            return ( ( judy_strt( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size ) ) ? false : true );
         }
 };
-#endif //JUDYLARRAY_CPP_H
+#endif //JUDYLARRAY_H
