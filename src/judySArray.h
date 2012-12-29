@@ -1,11 +1,11 @@
-#ifndef JUDYSARRAY_CPP_H
-#define JUDYSARRAY_CPP_H
+#ifndef JUDYSARRAY_H
+#define JUDYSARRAY_H
 
 /****************************************************************************//**
 * \file judySArray.h C++ wrapper for judy array implementation
 *
-*    A judy array maps a set of strings to corresponding memory cells.
-*    Each cell must be set to a non-zero value by the caller.
+*  A judyS array maps strings to corresponding memory cells, each containing
+*  a JudyValue. Each cell must be set to a non-zero value by the caller.
 *
 *    Author: Mark Pictor. Public domain.
 *
@@ -49,11 +49,20 @@ class judySArray {
             delete[] _buff;
         }
 
+        void clear() {
+            _buff[0] = '\0';
+            while( 0 != ( _lastSlot = ( JudyValue * ) judy_strt( _judyarray, ( const unsigned char * ) _buff, 0 ) ) ) {
+                judy_del( _judyarray );
+            }
+        }
+
         JudyValue getLastValue() {
+            assert( _lastSlot );
             return &_lastSlot;
         }
 
         void setLastValue( JudyValue value ) {
+            assert( _lastSlot );
             &_lastSlot = value;
         }
 
@@ -64,8 +73,8 @@ class judySArray {
         // allocate data memory within judy array for external use.
         // void *judy_data (Judy *judy, unsigned int amt);
 
-        //can this overwrite?
-        void insert( const char * key, JudyValue value, unsigned int keyLen = 0 ) {
+        /// insert or overwrite value for key
+        bool insert( const char * key, JudyValue value, unsigned int keyLen = 0 ) {
             assert( value != 0 );
             if( keyLen == 0 ) {
                 keyLen = strlen( key );
@@ -80,6 +89,7 @@ class judySArray {
             } else {
                 _success = false;
             }
+            return _success;
         }
 
         /// retrieve the cell pointer greater than or equal to given key
@@ -103,7 +113,7 @@ class judySArray {
                 assert( keyLen == strlen( key ) );
             }
             assert( keyLen <= _maxKeyLen );
-            _lastSlot = ( JudyValue * ) judy_slot( _judyarray, ( const unsigned char * )key, keyLen );
+            _lastSlot = ( JudyValue * ) judy_slot( _judyarray, ( const unsigned char * ) key, keyLen );
             if( _lastSlot ) {
                 _success = true;
                 return *_lastSlot;
@@ -128,19 +138,26 @@ class judySArray {
             return kv;
         }
 
+        /// retrieve the first key-value pair in the array
+        const pair & begin() {
+            _buff[0]='\0';
+            _lastSlot = ( JudyValue * ) judy_strt( _judyarray, ( const unsigned char * ) _buff, 0 );
+            return mostRecentPair();
+        }
+
         /// retrieve the last key-value pair in the array
         const pair & end() {
             _lastSlot = ( JudyValue * ) judy_end( _judyarray );
             return mostRecentPair();
         }
 
-        /// retrieve the key-value pair for the next string in the array.
+        /// retrieve the key-value pair for the next key in the array.
         const pair & next() {
             _lastSlot = ( JudyValue * ) judy_nxt( _judyarray );
             return mostRecentPair();
         }
 
-        /// retrieve the key-value pair for the prev string in the array.
+        /// retrieve the key-value pair for the prev key in the array.
         const pair & previous() {
             _lastSlot = ( JudyValue * ) judy_prv( _judyarray );
             return mostRecentPair();
@@ -159,8 +176,10 @@ class judySArray {
             }
         }
 
+        ///return true if the array is empty
         bool isEmpty() {
-            return ( _judyarray ? true : false );
+            _buff[0] = 0;
+            return ( ( judy_strt( _judyarray, ( const unsigned char * ) _buff, 0 ) ) ? false : true );
         }
 };
-#endif //JUDYSARRAY_CPP_H
+#endif //JUDYSARRAY_H
