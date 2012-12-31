@@ -119,7 +119,7 @@ class judyL2Array {
          * this never simply re-uses the pointer to the given vector because
          * that would mean that two keys could have the same value (pointer).
          */
-        void insert( JudyKey key, vector values, bool overwrite = false ) {
+        void insert( JudyKey key, const vector & values, bool overwrite = false ) {
             _lastSlot = ( vector ** ) judy_cell( _judyarray, ( const unsigned char * )key, _depth * JUDY_key_size );
             if( _lastSlot ) {
                 if( ! ( * _lastSlot ) ) {

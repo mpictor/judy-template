@@ -126,7 +126,7 @@ class judyS2Array {
          * this never simply re-uses the pointer to the given vector because
          * that would mean that two keys could have the same value (pointer).
          */
-        void insert( const char * key, vector values, unsigned int keyLen = 0, bool overwrite = false ) {
+        void insert( const char * key, const vector & values, unsigned int keyLen = 0, bool overwrite = false ) {
             if( keyLen == 0 ) {
                 keyLen = strlen( key );
             } else {
