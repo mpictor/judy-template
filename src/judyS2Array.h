@@ -111,6 +111,7 @@ class judyS2Array {
                     * new(n) vector;
                     * *_lastSlot = n;
                     * NOTE - memory alloc'd via judy_data will not be freed until the array is freed (judy_close)
+                    * also use placement new in the other insert function, below
                     */
                 }
                 ( * _lastSlot )->push_back( value );
@@ -121,9 +122,34 @@ class judyS2Array {
             return _success;
         }
 
-        //TODO
-        // for a given key, append to or replace the vector
-        //void insert( JudyKey key, vector values, bool replace = false ) {}
+        /** for a given key, append to or overwrite the vector
+         * this never simply re-uses the pointer to the given vector because
+         * that would mean that two keys could have the same value (pointer).
+         */
+        void insert( const char * key, vector values, unsigned int keyLen = 0, bool overwrite = false ) {
+            if( keyLen == 0 ) {
+                keyLen = strlen( key );
+            } else {
+                assert( keyLen == strlen( key ) );
+            }
+            assert( keyLen <= _maxKeyLen );
+            _lastSlot = ( vector ** ) judy_cell( _judyarray, ( const unsigned char * )key, keyLen );
+            if( _lastSlot ) {
+                if( ! ( * _lastSlot ) ) {
+                    * _lastSlot = new vector;
+                    /* TODO store vectors inside judy with placement new
+                     * (see other insert(), above)
+                     */
+                } else if( overwrite ) {
+                    _lastSlot->clear();
+                }
+                std::copy( values.begin(), values.end(), std::back_inserter< vector >( ( * _lastSlot ) ) );
+                _success = true;
+            } else {
+                _success = false;
+            }
+            return _success;
+        }
 
         /// retrieve the cell pointer greater than or equal to given key
         /// NOTE what about an atOrBefore function?

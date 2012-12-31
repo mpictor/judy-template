@@ -62,7 +62,7 @@ int main() {
     pass &= testFind( js, "bah",  1 );
     pass &= testFind( js, "blh",  2 );
 
-    //TODO test all of judyLArray
+    //TODO test all of judyS2Array
     if( pass ) {
         exit( EXIT_SUCCESS );
     } else {

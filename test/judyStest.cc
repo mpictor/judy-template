@@ -32,7 +32,7 @@ int main() {
     }
 
 
-    //TODO test all of judyLArray
+    //TODO test all of judySArray
     if( success ) {
         exit( EXIT_SUCCESS );
     } else {
