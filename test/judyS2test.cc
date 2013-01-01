@@ -62,10 +62,14 @@ int main() {
     pass &= testFind( js, "bah",  1 );
     pass &= testFind( js, "blh",  2 );
 
+    js.clear();
+
     //TODO test all of judyS2Array
     if( pass ) {
+        std::cout << "All tests passed." << std::endl;
         exit( EXIT_SUCCESS );
     } else {
+        std::cout << "At least one test failed." << std::endl;
         exit( EXIT_FAILURE );
     }
 }

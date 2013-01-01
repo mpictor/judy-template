@@ -15,17 +15,18 @@ int main() {
     judyLArray< uint64_t, uint64_t >::pair kv = jl.atOrAfter(4);
     std::cout << "k " << kv.key << " v " << kv.value << std::endl;
 
-    long v = jl.find( 8 );
+    long v = jl.find( 11 );
     if( v != 0 || jl.success() ) {
         std::cout << "find: false positive - v: " << v << " success: " << jl.success() << std::endl;
         exit( EXIT_FAILURE );
     }
-    v = jl.find( 11 );
+    v = jl.find( 7 );
     if( v != 312 || !jl.success() ) {
         std::cout << "find: false negative - v: " << v << " success: " << jl.success() << std::endl;
         exit( EXIT_FAILURE );
     }
 
+    jl.clear();
 
     //TODO test all of judyLArray
     exit( EXIT_SUCCESS );

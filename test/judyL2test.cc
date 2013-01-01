@@ -59,6 +59,7 @@ int main() {
     pass &= testFind( jl, 11, 1 );
     pass &= testFind( jl, 7,  2 );
 
+    jl.clear();
 
     //TODO test all of judyL2Array
     if( pass ) {
