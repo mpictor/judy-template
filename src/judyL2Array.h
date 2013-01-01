@@ -63,9 +63,9 @@ class judyL2Array {
         /// delete all vectors and empty the array
         void clear() {
             JudyKey key = 0;
-            while( 0 != ( _lastSlot = ( vector ** ) judy_strt( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size ) ) ) {
+            while( 0 != ( _lastSlot = ( vector ** ) judy_strt( _judyarray, ( const unsigned char * ) &key, 0 ) ) ) {
                 //( * _lastSlot )->~vector(); //TODO: placement new
-                delete ( * _lastSlot );
+                delete( * _lastSlot );
                 judy_del( _judyarray );
             }
         }
@@ -175,7 +175,7 @@ class judyL2Array {
         /// retrieve the first key-value pair in the array
         const cpair & begin() {
             JudyKey key = 0;
-            _lastSlot = ( vector ** ) judy_strt( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
+            _lastSlot = ( vector ** ) judy_strt( _judyarray, ( const unsigned char * ) &key, 0 );
             return mostRecentPair();
         }
 

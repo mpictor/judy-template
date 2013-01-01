@@ -57,7 +57,7 @@ class judyLArray {
 
         void clear() {
             JudyKey key = 0;
-            while( 0 != ( _lastSlot = ( JudyValue * ) judy_strt( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size ) ) ) {
+            while( 0 != ( _lastSlot = ( JudyValue * ) judy_strt( _judyarray, ( const unsigned char * ) &key, 0 ) ) ) {
                 judy_del( _judyarray );
             }
         }
@@ -129,7 +129,7 @@ class judyLArray {
         /// retrieve the first key-value pair in the array
         const pair & begin() {
             JudyKey key = 0;
-            _lastSlot = ( JudyValue * ) judy_strt( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
+            _lastSlot = ( JudyValue * ) judy_strt( _judyarray, ( const unsigned char * ) &key, 0 );
             return mostRecentPair();
         }
 
