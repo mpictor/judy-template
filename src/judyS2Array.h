@@ -66,17 +66,17 @@ class judyS2Array {
             _buff[0] = '\0';
             while( 0 != ( _lastSlot = ( vector ** ) judy_strt( _judyarray, ( const unsigned char * ) _buff, 0 ) ) ) {
                 //( * _lastSlot )->~vector(); //TODO: placement new
-                delete ( * _lastSlot );
+                delete( * _lastSlot );
                 judy_del( _judyarray );
             }
         }
 
-        JudyValue getLastValue() {
+        vector * getLastValue() {
             assert( _lastSlot );
             return &_lastSlot;
         }
 
-        void setLastValue( JudyValue value ) {
+        void setLastValue( vector * value ) {
             assert( _lastSlot );
             &_lastSlot = value;
         }

@@ -70,12 +70,12 @@ class judyL2Array {
             }
         }
 
-        JudyValue getLastValue() {
+        vector * getLastValue() {
             assert( _lastSlot );
             return &_lastSlot;
         }
 
-        void setLastValue( JudyValue value ) {
+        void setLastValue( vector * value ) {
             assert( _lastSlot );
             &_lastSlot = value;
         }
@@ -120,7 +120,7 @@ class judyL2Array {
          * that would mean that two keys could have the same value (pointer).
          */
         bool insert( JudyKey key, const vector & values, bool overwrite = false ) {
-            _lastSlot = ( vector ** ) judy_cell( _judyarray, ( const unsigned char * )key, _depth * JUDY_key_size );
+            _lastSlot = ( vector ** ) judy_cell( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
             if( _lastSlot ) {
                 if( ! ( * _lastSlot ) ) {
                     * _lastSlot = new vector;
