@@ -508,7 +508,7 @@ JudySlot * judy_slot( Judy * judy, const unsigned char * buff, unsigned int max 
                 table = ( JudySlot * )( next & JUDY_mask ); // outer radix
 
                 if( judy->depth ) {
-                    slot = ( src[depth] >> ( ( JUDY_key_size - off++ & JUDY_key_mask ) * 8 ) ) & 0xff;
+                    slot = ( src[depth] >> ( ( JUDY_key_size - ++off & JUDY_key_mask ) * 8 ) ) & 0xff;
                 } else if( off < max ) {
                     slot = buff[off++];
                 } else {
