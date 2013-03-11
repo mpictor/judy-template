@@ -21,6 +21,8 @@ struct judyl2KVpair {
     vec value;
 };
 
+//TODO: use vectors only when >( sizeof(vector)/sizeof(value) ) values, and store data/vector within judy.
+
 /** A judyL2 array maps JudyKey's to multiple JudyValue's, similar to std::multimap.
  * Internally, this is a judyL array of std::vector< JudyValue >.
  * The first template parameter must be the same size as a void*
@@ -39,9 +41,9 @@ class judyL2Array {
         unsigned int _maxLevels, _depth;
         vector ** _lastSlot;
         JudyKey _buff[1];
-        bool _success;
+        bool _success, _deletePointersInDtor;
     public:
-        judyL2Array(): _maxLevels( sizeof( JudyKey ) ), _depth( 1 ), _lastSlot( 0 ), _success( true ) {
+        judyL2Array( bool deletePointersInDtor = false ): _maxLevels( sizeof( JudyKey ) ), _depth( 1 ), _lastSlot( 0 ), _success( true ) {
             assert( sizeof( JudyKey ) == JUDY_key_size && "JudyKey *must* be the same size as a pointer!" );
             _judyarray = judy_open( _maxLevels, _depth );
             _buff[0] = 0;
@@ -61,7 +63,7 @@ class judyL2Array {
         }
 
         /// delete all vectors and empty the array
-        void clear() {
+        void clear( bool deletePointers = false ) {
             JudyKey key = 0;
             while( 0 != ( _lastSlot = ( vector ** ) judy_strt( _judyarray, ( const unsigned char * ) &key, 0 ) ) ) {
                 //( * _lastSlot )->~vector(); //TODO: placement new
@@ -92,6 +94,11 @@ class judyL2Array {
         //TODO
         // allocate data memory within judy array for external use.
         // void *judy_data (Judy *judy, unsigned int amt);
+        //assert( ( result % sizeof( void * ) ) == 0 ); //ensure that it's aligned
+        //or, assert( ( result & 0x1 ) == 0 ); //ensure that lsb isn't set; this is the only bit we care about
+        //then, store the data at *result and use ( result | 0x1 ) as the JudyValue
+        //when retrieving, check lsb; if unset, it's a vector; otherwise, up to sizeof(vector<type>)/sizeof(type) keys, null terminated
+        //assert( ( result & 0x1 ) == 0 && "Sorry, your platform has pointers that aren't aligned. Recompile with the macro JUDY_DISABLE_POINTER_TRICKS defined. Memory consumption will increase." );
 
         /// insert value into the vector for key.
         bool insert( JudyKey key, JudyValue value ) {
