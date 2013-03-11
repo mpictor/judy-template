@@ -21,8 +21,6 @@ struct judyl2KVpair {
     vec value;
 };
 
-//TODO: use vectors only when >( sizeof(vector)/sizeof(value) ) values, and store data/vector within judy.
-
 /** A judyL2 array maps JudyKey's to multiple JudyValue's, similar to std::multimap.
  * Internally, this is a judyL array of std::vector< JudyValue >.
  * The first template parameter must be the same size as a void*
@@ -41,16 +39,30 @@ class judyL2Array {
         unsigned int _maxLevels, _depth;
         vector ** _lastSlot;
         JudyKey _buff[1];
-        bool _success, _deletePointersInDtor;
+        bool _success, _altMemStrategy, _valuesAreDeletablePointers;
     public:
-        judyL2Array( bool deletePointersInDtor = false ): _maxLevels( sizeof( JudyKey ) ), _depth( 1 ), _lastSlot( 0 ), _success( true ) {
+        /** \param altMemStrategy If true, the array will consume more memory when first populated, but less when
+         * large numbers of values have been added and keys (or many values) have been removed. When false, placement new
+         * and judy_data() are used to place some data(*) within the judy array. The downside is that this memory cannot be
+         * freed until the judy array is deleted.
+         *
+         * (*) The data that is placed within the array is either the vector object, or however many JudyValue's will fit
+         * within sizeof(vector) bytes.
+         *
+         * \param valuesAreDeletablePointers If true, operator delete will be called for each value when it is removed
+         * from the array (i.e. with clear() or when the destructor is called).
+        */
+        judyL2Array( bool altMemStrategy = false, bool valuesAreDeletablePointers = false ): _maxLevels( sizeof( JudyKey ) ),
+                _depth( 1 ), _lastSlot( 0 ), _success( true ), _altMemStrategy( altMemStrategy ),
+                _valuesAreDeletablePointers( valuesAreDeletablePointers ) {
             assert( sizeof( JudyKey ) == JUDY_key_size && "JudyKey *must* be the same size as a pointer!" );
             _judyarray = judy_open( _maxLevels, _depth );
             _buff[0] = 0;
         }
 
         explicit judyL2Array( const judyL2Array< JudyKey, JudyValue > & other ): _maxLevels( other._maxLevels ),
-            _depth( other._depth ), _success( other._success ) {
+                _depth( other._depth ), _success( other._success ), _altMemStrategy( other._altMemStrategy ),
+                _valuesAreDeletablePointers( other._valuesAreDeletablePointers ) {
             _judyarray = judy_clone( other._judyarray );
             _buff[0] = other._buff[0];
             find( _buff ); //set _lastSlot
@@ -62,13 +74,26 @@ class judyL2Array {
             judy_close( _judyarray );
         }
 
+        inline unsigned int maxStuffedKeys() const {
+            if( _altMemStrategy ) {
+                return 0;
+            }
+            return sizeof( vector ) / sizeof( judyvalue );
+        }
+
         /// delete all vectors and empty the array
-        void clear( bool deletePointers = false ) {
+        void clear() {
             JudyKey key = 0;
             while( 0 != ( _lastSlot = ( vector ** ) judy_strt( _judyarray, ( const unsigned char * ) &key, 0 ) ) ) {
-                //( * _lastSlot )->~vector(); //TODO: placement new
-                delete( * _lastSlot );
-                judy_del( _judyarray );
+                if( _valuesAreDeletablePointers ) {
+                    //TODO loop through vector contents, deleting everything
+                }
+                if( _altMemStrategy ) {
+                    ( * _lastSlot )->~vector();
+                } else {
+                    delete( * _lastSlot );
+                    judy_del( _judyarray );
+                }
             }
         }
 
@@ -94,27 +119,55 @@ class judyL2Array {
         //TODO
         // allocate data memory within judy array for external use.
         // void *judy_data (Judy *judy, unsigned int amt);
-        //assert( ( result % sizeof( void * ) ) == 0 ); //ensure that it's aligned
-        //or, assert( ( result & 0x1 ) == 0 ); //ensure that lsb isn't set; this is the only bit we care about
-        //then, store the data at *result and use ( result | 0x1 ) as the JudyValue
-        //when retrieving, check lsb; if unset, it's a vector; otherwise, up to sizeof(vector<type>)/sizeof(type) keys, null terminated
-        //assert( ( result & 0x1 ) == 0 && "Sorry, your platform has pointers that aren't aligned. Recompile with the macro JUDY_DISABLE_POINTER_TRICKS defined. Memory consumption will increase." );
 
         /// insert value into the vector for key.
         bool insert( JudyKey key, JudyValue value ) {
             _lastSlot = ( vector ** ) judy_cell( _judyarray, ( const unsigned char * ) &key, _depth * JUDY_key_size );
             if( _lastSlot ) {
-                if( ! ( * _lastSlot ) ) {
-                    * _lastSlot = new vector;
+                if( _altMemStrategy ) {
+                    if( ! ( * _lastSlot ) ) {
+                        * _lastSlot = new vector;
+                    }
+                    ( * _lastSlot )->push_back( value );
+                } else {
                     /* TODO store vectors inside judy with placement new
-                    * vector * n = judy_data( _judyarray, sizeof( std::vector < JudyValue > ) );
-                    * new(n) vector;
-                    * *_lastSlot = n;
-                    * NOTE - memory alloc'd via judy_data will not be freed until the array is freed (judy_close)
-                    * also use placement new in the other insert function, below
-                    */
+                     * vector * n = judy_data( _judyarray, sizeof( std::vector < JudyValue > ) );
+                     * new(n) vector;
+                     * *_lastSlot = n;
+                     * NOTE - memory alloc'd via judy_data will not be freed until the array is freed (judy_close)
+                     * also use placement new in the other insert function, below
+                     */
+                    if( * _lastSlot ) {
+                        if( ( * _lastSlot ) & 0x1 ) { // LSB set -> storing individual JudyValue's in the space
+                            //TODO count values; add another or copy to temp array, create vector in place, copy values to vector, and append new value
+                            int count = 0;
+                            for( int i = 0; i < maxStuffedKeys(); i++ ) {
+                                if( ( * _lastSlot ) + i > 0 ) {
+                                    count ++;
+                                }
+                            }
+                            if( count <= maxStuffedKeys() ) {
+                                //insert at end
+                            } else {
+                                JudyValue * temp = new JudyValue[maxStuffedKeys()];
+                                //copy
+                                //create vector in place
+                                * _lastSlot = ( * _lastSlot ) ^ 0x1;
+                                new( * _lastSlot ) vector;
+                                //copy into vector
+                                ( * _lastSlot )->push_back( value );
+                            }
+                        } else { // LSB unset -> JudyValue's are in a vector
+                            ( * _lastSlot )->push_back( value );
+                        }
+                    } else {
+                        void * v = judy_data( _judyarray, sizeof( vector ) );
+                        ( * _lastSlot ) = v & 0x1;
+                        *v = value;
+                        v++;
+                        *v = 0; //if judy_data initializes, this is unnecessary
+                    }
                 }
-                ( * _lastSlot )->push_back( value );
                 _success = true;
             } else {
                 _success = false;
