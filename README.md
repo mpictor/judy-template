@@ -5,7 +5,7 @@ This uses [Karl Malbrain's implementation](http://code.google.com/p/judyarray/) 
 ## The templates
 * `judyLArray` - a C++ template wrapper for an int-int Judy Array. JudyKey and JudyValue must be integer types and the same size as a pointer (i.e. 32- or 64-bit)
 * `judySArray` - Same as judyLArray, but with string-int mapping. The above restrictions on JudyValue apply here as well.
-* **TODO** - single-key, multi-value versions of the above
+* `judyL2Array`, `judyS2Array` - single-key, multi-value versions of the above
 * **TODO** - single-key, n-value versions of the above *(?)*
 
 ## Comparison between this and the versions Karl and Doug wrote
