@@ -14,6 +14,7 @@
 #include "judy.h"
 #include "assert.h"
 #include <vector>
+#include <stdint.h>
 
 template< typename JudyKey, typename vec >
 struct judyl2KVpair {
@@ -38,8 +39,49 @@ class judyL2Array {
         Judy * _judyarray;
         unsigned int _maxLevels, _depth;
         vector ** _lastSlot;
+        vector temp;
         JudyKey _buff[1];
         bool _success, _altMemStrategy, _valuesAreDeletablePointers;
+        /// used when pointer may point to a vector or to a few values
+        union taggedPtr {
+            uintptr_t asInt;
+            vector *  asPtr;
+            vector ** asPtrPtr;
+        };
+        /// count values starting with * u.asPtr
+        /// side effect: clears LSB of u; u points beyond last used cell when done
+        unsigned int countStuffedValues( taggedPtr & tp ) {
+            assert( tp.asInt & 0x1 );
+            tp.asInt ^= 0x1;
+            unsigned int count = 0;
+            for( ; count < maxStuffedValues(); count++, tp.asPtr++ ) {
+                if( ! (* tp.asPtrPtr ) ) {
+                    break;
+                }
+            }
+            return count;
+        }
+        void copyToVector() {
+            taggedPtr tp;
+            tp.asPtr = * _lastSlot;
+            assert( tp.asInt & 0x1 );
+            tp.asInt ^= 0x1;
+            temp.clear();
+            for( unsigned int i = 0; i < maxStuffedValues(); i++ ) {
+                temp.push_back( ( JudyValue ) (* tp.asPtrPtr ) );
+                tp.asPtr++;
+            }
+        }
+        void migrateToVector() {
+            taggedPtr tp;
+            tp.asPtr = * _lastSlot;
+            assert( tp.asInt & 0x1 );
+            tp.asInt ^= 0x1;
+            copyToVector();
+            * _lastSlot = tp.asPtr;
+            new( * _lastSlot ) vector; //create vector in place
+            ( * _lastSlot )->swap( temp );
+        }
     public:
         /** \param altMemStrategy If true, the array will consume more memory when first populated, but less when
          * large numbers of values have been added and keys (or many values) have been removed. When false, placement new
@@ -47,7 +89,7 @@ class judyL2Array {
          * freed until the judy array is deleted.
          *
          * (*) The data that is placed within the array is either the vector object, or however many JudyValue's will fit
-         * within sizeof(vector) bytes.
+         * within sizeof(vector) bytes. Uses tagged pointers, so this will not work on plat's with unaligned malloc.
          *
          * \param valuesAreDeletablePointers If true, operator delete will be called for each value when it is removed
          * from the array (i.e. with clear() or when the destructor is called).
@@ -74,7 +116,7 @@ class judyL2Array {
             judy_close( _judyarray );
         }
 
-        inline unsigned int maxStuffedKeys() const {
+        inline unsigned int maxStuffedValues() const {
             if( _altMemStrategy ) {
                 return 0;
             }
@@ -96,7 +138,7 @@ class judyL2Array {
                 }
             }
         }
-
+/* these need work, or need removed
         vector * getLastValue() {
             assert( _lastSlot );
             return &_lastSlot;
@@ -106,19 +148,15 @@ class judyL2Array {
             assert( _lastSlot );
             &_lastSlot = value;
         }
-
+*/
         bool success() {
             return _success;
         }
 
-        /** TODO
+        /* TODO
          * test for std::vector::shrink_to_fit (C++11), use it once the array is as full as it will be
          * void freeUnused() {...}
          */
-
-        //TODO
-        // allocate data memory within judy array for external use.
-        // void *judy_data (Judy *judy, unsigned int amt);
 
         /// insert value into the vector for key.
         bool insert( JudyKey key, JudyValue value ) {
@@ -130,42 +168,27 @@ class judyL2Array {
                     }
                     ( * _lastSlot )->push_back( value );
                 } else {
-                    /* TODO store vectors inside judy with placement new
-                     * vector * n = judy_data( _judyarray, sizeof( std::vector < JudyValue > ) );
-                     * new(n) vector;
-                     * *_lastSlot = n;
-                     * NOTE - memory alloc'd via judy_data will not be freed until the array is freed (judy_close)
-                     * also use placement new in the other insert function, below
-                     */
+                    taggedPtr tp;
                     if( * _lastSlot ) {
-                        if( ( * _lastSlot ) & 0x1 ) { // LSB set -> storing individual JudyValue's in the space
-                            //TODO count values; add another or copy to temp array, create vector in place, copy values to vector, and append new value
-                            int count = 0;
-                            for( int i = 0; i < maxStuffedKeys(); i++ ) {
-                                if( ( * _lastSlot ) + i > 0 ) {
-                                    count ++;
-                                }
-                            }
-                            if( count <= maxStuffedKeys() ) {
-                                //insert at end
+                        tp.asPtr = * _lastSlot;
+                        if( tp.asInt & 0x1 ) { // LSB set -> storing individual JudyValue's in the space
+                            unsigned int count = countStuffedValues( tp ); // NOTE - this function affects the value of 'u'
+                            if( count < maxStuffedValues() ) {
+                                * tp.asPtrPtr = (vector*) value;
+//                                 std::cout << "pp " << u.asPtrPtr << std::endl;
                             } else {
-                                JudyValue * temp = new JudyValue[maxStuffedKeys()];
-                                //copy
-                                //create vector in place
-                                * _lastSlot = ( * _lastSlot ) ^ 0x1;
-                                new( * _lastSlot ) vector;
-                                //copy into vector
+                                migrateToVector();
                                 ( * _lastSlot )->push_back( value );
                             }
                         } else { // LSB unset -> JudyValue's are in a vector
                             ( * _lastSlot )->push_back( value );
                         }
                     } else {
-                        void * v = judy_data( _judyarray, sizeof( vector ) );
-                        ( * _lastSlot ) = v & 0x1;
-                        *v = value;
-                        v++;
-                        *v = 0; //if judy_data initializes, this is unnecessary
+                        tp.asPtr = ( vector * ) judy_data( _judyarray, sizeof( vector ) );
+                        tp.asInt |= 0x1;
+                        * _lastSlot = tp.asPtr;
+                        * tp.asPtrPtr = (vector*) value;
+                        // judy_data clears the malloc'd memory, so it is not necessary to zero the following byte
                     }
                 }
                 _success = true;

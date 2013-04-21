@@ -40,12 +40,17 @@ int main() {
     bool pass = true;
     jl2a jl;
     std::cout.setf(std::ios::boolalpha);
-//     std::cout << "size of judyL2Array: " << sizeof( jl ) << std::endl;
+    std::cout << "size of judyL2Array: " << sizeof( jl ) << ", size of vector: " << sizeof( jl2a::vector ) << ", max values per key without a vector: " << jl.maxStuffedValues() << std::endl;
     jl.insert( 5,  12  );
     jl.insert( 6,  2   );
     jl.insert( 7,  312 );
     jl.insert( 11, 412 );
     jl.insert( 7,  313 );
+    jl.insert( 7,  323 );
+    jl.insert( 7,  333 );
+    jl.insert( 99,  13 );
+    jl.insert( 99,  23 );
+    jl.insert( 99,  33 );
     jl2a::cpair kv = jl.atOrAfter(4);
     std::cout << "atOrAfter test ..." << std::endl;
     if( kv.value != 0 && jl.success() ) {
@@ -57,7 +62,8 @@ int main() {
 
     pass &= testFind( jl, 8,  0 );
     pass &= testFind( jl, 11, 1 );
-    pass &= testFind( jl, 7,  2 );
+    pass &= testFind( jl, 7,  4 );
+    pass &= testFind( jl, 99, 3 );
 
     jl.clear();
 
