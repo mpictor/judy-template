@@ -4,7 +4,8 @@ project( JudyTemplates )
 
 if( NOT DEFINED CMAKE_BUILD_TYPE )
     # set( CMAKE_BUILD_TYPE "RelWithDebInfo" ) #optimize, but include debug info
-    set( CMAKE_BUILD_TYPE "Release" )
+#     set( CMAKE_BUILD_TYPE "Release" )
+    set( CMAKE_BUILD_TYPE "Debug" )
 endif( NOT DEFINED CMAKE_BUILD_TYPE )
 
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib )
@@ -13,7 +14,7 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
 
 if( NOT DEFINED JUDY_OPTIMIZE_FLAGS )
     if( CMAKE_COMPILER_IS_GNUCC )
-        set( JUDY_OPTIMIZE_FLAGS "-march=native" )
+        set( JUDY_OPTIMIZE_FLAGS "-march=native -O0 -g -std=c++11" )
 
         #test for LTO; this uses an internal variable so it may break
         if( DEFINED CMAKE_C_COMPILER_VERSION )
