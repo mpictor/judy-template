@@ -42,10 +42,10 @@ class judyL2Array {
         unsigned int _maxLevels, _depth;
         vector ** _lastSlot;
         JudyKey _buff[1];
-        bool _success, _deletePointersInDtor;
+        bool _success;
         cpair kv;
     public:
-        judyL2Array( bool deletePointersInDtor = false ): _maxLevels( sizeof( JudyKey ) ), _depth( 1 ), _lastSlot( 0 ), _success( true ) {
+        judyL2Array(): _maxLevels( sizeof( JudyKey ) ), _depth( 1 ), _lastSlot( 0 ), _success( true ) {
             assert( sizeof( JudyKey ) == JUDY_key_size && "JudyKey *must* be the same size as a pointer!" );
             _judyarray = judy_open( _maxLevels, _depth );
             _buff[0] = 0;
@@ -65,7 +65,7 @@ class judyL2Array {
         }
 
         /// delete all vectors and empty the array
-        void clear( bool deletePointers = false ) {
+        void clear() {
             JudyKey key = 0;
             while( 0 != ( _lastSlot = ( vector ** ) judy_strt( _judyarray, ( const unsigned char * ) &key, 0 ) ) ) {
                 //( * _lastSlot )->~vector(); //TODO: placement new
