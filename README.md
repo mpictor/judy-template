@@ -20,12 +20,15 @@ This uses [Karl Malbrain's implementation](http://code.google.com/p/judyarray/) 
  * `judy.c`, `judy.h` - implementation of the Judy Array
  * `judyLArray.h` - the judyLArray template
  * `judySArray.h` - the judySArray template
+ * `judyL2Array.h`, `judyS2Array.h` - single-key, multi-value versions of the above
 * **test/**
  * `hexSort.c` - Sorts a file where each line contains 32 hex chars. Compiles to `hexsort`, which is the same executable as compiling Karl's code with `-DHEXSORT -DSTANDALONE`
  * `pennySort.c` - Sorts strings; compiles to `pennysort`. Same as compiling Karl's code with `-DSTANDALONE`.
  * `sort.c`, `sort.h` - Karl's sorting functions. Only used by `hexsort` and `pennysort`.
  * `judyLtest.cc` - an incomplete test of the judyLArray template.
+ * `judyL2test.cc` - an incomplete test of the judyL2Array template.
  * `judyStest.cc` - an incomplete test of the judySArray template.
+ * `judyS2test.cc` - an incomplete test of the judyS2Array template.
 
 
 ## Compiling

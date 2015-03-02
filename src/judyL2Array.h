@@ -96,11 +96,6 @@ class judyL2Array {
         //TODO
         // allocate data memory within judy array for external use.
         // void *judy_data (Judy *judy, unsigned int amt);
-        //assert( ( result % sizeof( void * ) ) == 0 ); //ensure that it's aligned
-        //or, assert( ( result & 0x1 ) == 0 ); //ensure that lsb isn't set; this is the only bit we care about
-        //then, store the data at *result and use ( result | 0x1 ) as the JudyValue
-        //when retrieving, check lsb; if unset, it's a vector; otherwise, up to sizeof(vector<type>)/sizeof(type) keys, null terminated
-        //assert( ( result & 0x1 ) == 0 && "Sorry, your platform has pointers that aren't aligned. Recompile with the macro JUDY_DISABLE_POINTER_TRICKS defined. Memory consumption will increase." );
 
         /// insert value into the vector for key.
         bool insert( JudyKey key, JudyValue value ) {
