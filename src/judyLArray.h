@@ -14,6 +14,10 @@
 #include "judy.h"
 #include "assert.h"
 
+#ifdef HAVE_STD_ENABLEIF
+#include <type_traits>
+#endif
+
 template< typename JudyKey, typename JudyValue >
 struct judylKVpair {
     JudyKey key;
@@ -57,7 +61,18 @@ class judyLArray {
             judy_close( _judyarray );
         }
 
-        void clear( bool deleteContents = false ) {
+        ///empty the judy array, delete nothing
+        ///overload below can also delete JudyValue's, iff they are a pointer type
+        void clear() {
+            JudyKey key = 0;
+            while( 0 != ( _lastSlot = ( JudyValue * ) judy_strt( _judyarray, ( const unsigned char * ) &key, 0 ) ) ) {
+                judy_del( _judyarray );
+            }
+        }
+#ifdef HAVE_STD_ENABLEIF
+        template <typename X=JudyValue>
+        typename std::enable_if<std::is_pointer<X>::value, void>::type
+        clear( bool deleteContents ) {
             JudyKey key = 0;
             while( 0 != ( _lastSlot = ( JudyValue * ) judy_strt( _judyarray, ( const unsigned char * ) &key, 0 ) ) ) {
                 if( deleteContents ) {
@@ -66,6 +81,7 @@ class judyLArray {
                 judy_del( _judyarray );
             }
         }
+#endif
 
         JudyValue getLastValue() {
             assert( _lastSlot );
