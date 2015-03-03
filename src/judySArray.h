@@ -22,14 +22,16 @@ struct judysKVpair {
 };
 template< typename JudyValue >
 class judySArray {
+    public:
+        typedef judysKVpair< JudyValue > pair;
     protected:
         Judy * _judyarray;
         unsigned int _maxKeyLen;
         JudyValue * _lastSlot;
         unsigned char * _buff;
         bool _success;
+        pair _kv;
     public:
-        typedef judysKVpair< JudyValue > pair;
         judySArray( unsigned int maxKeyLen ): _maxKeyLen( maxKeyLen ), _success( true ) {
             _judyarray = judy_open( _maxKeyLen, 0 );
             _buff = new unsigned char[_maxKeyLen];
@@ -124,18 +126,17 @@ class judySArray {
         }
 
         /// retrieve the key-value pair for the most recent judy query.
-        inline const pair mostRecentPair() {
-            pair kv;
+        inline const pair & mostRecentPair() {
             judy_key( _judyarray, _buff, _maxKeyLen );
             if( _lastSlot ) {
-                kv.value = *_lastSlot;
+                _kv.value = *_lastSlot;
                 _success = true;
             } else {
-                kv.value = ( JudyValue ) 0;
+                _kv.value = ( JudyValue ) 0;
                 _success = false;
             }
-            kv.key = _buff;
-            return kv;
+            _kv.key = _buff;
+            return _kv;
         }
 
         /// retrieve the first key-value pair in the array
