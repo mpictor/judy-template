@@ -2,6 +2,34 @@
 cmake_minimum_required(VERSION 2.8)
 project( JudyTemplates )
 
+include(CMakePushCheckState)
+include(CheckCXXSourceRuns)
+
+set( TEST_STD_ENABLEIF "
+#include <iostream>
+#include <type_traits>
+template<class T>
+typename std::enable_if<std::is_pointer<T>::value, T>::type foo2(T t) {return t;}
+int main(int a, char ** b) {std::cout << foo2(b[0]) <<std::endl;}
+" )
+cmake_push_check_state()
+  if( UNIX )
+    set( CMAKE_REQUIRED_FLAGS "-std=c++11" )
+  else( UNIX )
+    # vars probably need set for MSVC11, embarcadero, etc
+  endif( UNIX )
+  CHECK_CXX_SOURCE_RUNS( "${TEST_STD_ENABLEIF}" HAVE_STD_ENABLEIF )   #quotes are *required*!
+cmake_pop_check_state()
+if( "${HAVE_STD_ENABLEIF}" )
+  message(" .. Compiler supports std::is_pointer<T> and std::enable_if<B,T>")
+  add_definitions( -DHAVE_STD_ENABLEIF )
+  if(UNIX)
+    add_definitions( "-std=c++11" )
+  endif()
+else()
+  message(" !! Compiler does not support std::is_pointer<T> and/or std::enable_if<B,T>")
+endif()
+
 if( NOT DEFINED CMAKE_BUILD_TYPE )
   # set( CMAKE_BUILD_TYPE "RelWithDebInfo" ) #optimize, but include debug info
   set( CMAKE_BUILD_TYPE "Release" )
